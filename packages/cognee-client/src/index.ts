@@ -1,10 +1,13 @@
 import type {
   MemoryItem,
   QAInput,
+  RecallAnswer,
   RecallOptions,
   RememberOptions,
   RememberResult,
 } from "./types";
+
+export { buildFallbackAnswer, buildRecallQuery } from "./query";
 
 /**
  * Typed REST client for a self-hosted Cognee instance (verified against
@@ -69,20 +72,24 @@ export async function rememberQA(
   };
 }
 
-/** F4 — pull relevant past context before the vision call. */
-export async function recall(query: string, o: RecallOptions): Promise<string> {
+/** F4 — Cognee answers via GRAPH_COMPLETION (scope auto = session + graph). */
+export async function recall(
+  query: string,
+  o: RecallOptions,
+): Promise<RecallAnswer> {
   const res = await postJson("/api/v1/recall", {
     query,
     datasets: [o.dataset],
     session_id: o.sessionId,
-    scope: o.scope ?? "session",
-    search_type: null,
-    top_k: o.topK ?? 10,
+    scope: o.scope ?? "auto",
+    search_type: o.searchType !== undefined ? o.searchType : "GRAPH_COMPLETION",
+    top_k: o.topK ?? 15,
+    ...(o.systemPrompt ? { system_prompt: o.systemPrompt } : {}),
   });
   if (!res.ok) {
     throw new Error(`recall failed: ${res.status} ${await safeText(res)}`);
   }
-  return extractRecallText(await res.json());
+  return parseRecallAnswer(await res.json());
 }
 
 /** F8 — feedback-driven graph enrichment. */
@@ -141,11 +148,67 @@ function formatRecallItem(item: Record<string, unknown>): string {
   return JSON.stringify(item);
 }
 
+/** Whether a recall hit actually drew on stored memory (not just LLM on query). */
+function itemUsedMemory(item: Record<string, unknown>): boolean {
+  const source = String(item.source ?? "");
+  if (source === "session") return true;
+  if (source === "graph_context" || source === "session_context") {
+    const content = item.content ?? item.text;
+    return typeof content === "string" && content.trim().length > 0;
+  }
+  if (source === "graph") {
+    const used = item.used_graph_element_ids;
+    if (
+      used &&
+      typeof used === "object" &&
+      Object.keys(used as object).length > 0
+    ) {
+      return true;
+    }
+    const meta = item.metadata;
+    return Boolean(meta && typeof meta === "object" && Object.keys(meta).length);
+  }
+  return false;
+}
+
+function textFromRecallItem(item: Record<string, unknown>): string {
+  const text = item.text ?? item.answer ?? item.content;
+  return typeof text === "string" ? text.trim() : "";
+}
+
+/** Parse /recall JSON into the user-facing answer + memory-used flag. */
+export function parseRecallAnswer(data: unknown): RecallAnswer {
+  if (data == null) return { text: "", usedMemory: false };
+
+  if (Array.isArray(data)) {
+    let usedMemory = false;
+    const parts: string[] = [];
+
+    for (const raw of data) {
+      if (typeof raw !== "object" || !raw) continue;
+      const item = raw as Record<string, unknown>;
+      if (itemUsedMemory(item)) usedMemory = true;
+      const chunk = textFromRecallItem(item);
+      if (chunk) parts.push(chunk);
+    }
+
+    const text = parts.join("\n\n");
+    return { text, usedMemory };
+  }
+
+  const text = extractRecallTextLegacy(data);
+  return { text, usedMemory: false };
+}
+
 /**
- * Normalize /recall JSON into plain text for the vision system prompt.
+ * Normalize /recall JSON into plain text (legacy helper).
  * Handles session-scoped hits (source:"session") verified on cognee 1.2.2-local.
  */
 export function extractRecallText(data: unknown): string {
+  return parseRecallAnswer(data).text || extractRecallTextLegacy(data);
+}
+
+function extractRecallTextLegacy(data: unknown): string {
   if (data == null) return "";
   if (typeof data === "string") return data;
 
@@ -187,6 +250,7 @@ export function extractRecallText(data: unknown): string {
 
   if (typeof d.answer === "string") return d.answer;
   if (typeof d.content === "string") return d.content;
+  if (typeof d.text === "string") return d.text;
 
   return JSON.stringify(d);
 }

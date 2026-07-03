@@ -19,19 +19,20 @@ apps/
   web/                Next.js landing page (built last)
 packages/
   cognee-client/      typed REST client for self-hosted Cognee (remember/recall/improve/forget)
-  api-client/         vision LLM client (OpenAI gpt-4o-mini)
+  api-client/         OpenRouter screen analysis (Llama 3.2 vision)
   ui/                 shared React primitives
 ```
 
-Two LLM touchpoints, both OpenAI `gpt-4o-mini`:
-1. Cognee's internal graph-extraction/embeddings (`LLM_API_KEY` in the cognee repo `.env`)
-2. This app's vision-answer call (`OPENAI_API_KEY` in `apps/desktop/.env`)
+LLM touchpoints:
+1. **Cognee** (`LLM_API_KEY` in the cognee repo `.env`) — answers via `recall(GRAPH_COMPLETION)` + graph extraction
+2. **OpenRouter** (`OPENROUTER_API_KEY` in `apps/desktop/.env`) — describes the screen as text before recall
 
 ## The loop
 
-`Ctrl+Shift+Space` → screenshot (before popup) → popup opens → you type → `recall()` past
-memory → vision LLM answers with screenshot + memory → answer shown → `remember()` writes
-the exchange to the graph in the background. Next time, `recall()` brings it back.
+`Ctrl+Shift+Space` → screenshot (before popup) → OpenRouter describes screen → popup opens →
+you type → `recall(scope: auto, GRAPH_COMPLETION)` answers from memory + screen context →
+answer shown → `remember()` writes the exchange in the background → `improve()` every 5 Q&As
+and on quit.
 
 ## Setup
 
@@ -45,7 +46,7 @@ curl http://localhost:8000/health   # expect healthy
 # 2. This repo
 pnpm install
 cp apps/desktop/.env.example apps/desktop/.env
-# add your OPENAI_API_KEY to apps/desktop/.env
+# add OPENROUTER_API_KEY (and DEEPGRAM_API_KEY for voice) to apps/desktop/.env
 pnpm dev
 ```
 

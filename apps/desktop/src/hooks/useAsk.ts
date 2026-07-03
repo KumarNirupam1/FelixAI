@@ -40,10 +40,8 @@ export function useAsk(dataset: "main" | "private") {
 
   async function ask(question: string): Promise<void> {
     if (!question.trim() || loading) return;
-    const isFirstMessage = messages.length === 0;
     setMessages((m) => [...m, { role: "user", text: question }]);
     setLoading(true);
-    if (isFirstMessage) void window.api.expandWindow();
     try {
       const res = await window.api.ask({ question, dataset });
       setMessages((m) => [

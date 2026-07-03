@@ -69,11 +69,12 @@ export function App() {
         </nav>
 
         <main className="no-drag min-h-0 flex-1 overflow-hidden px-6 pb-6">
-          {tab === "chat" ? (
+          <div className={tab === "chat" ? "flex h-full flex-col" : "hidden"}>
             <ChatView dataset={dataset} setDataset={setDataset} />
-          ) : (
+          </div>
+          <div className={tab === "memory" ? "flex h-full flex-col" : "hidden"}>
             <MemoryView />
-          )}
+          </div>
         </main>
       </div>
     </div>

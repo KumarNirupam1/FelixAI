@@ -55,7 +55,7 @@ export function MessageBubble({ message }: Props) {
           </div>
         )}
         {!isUser && message.usedMemory && (
-          <p className="mt-2 text-[10px] text-white/35">recalled memory</p>
+          <p className="mt-2 text-[10px] text-white/35">memory retrieved</p>
         )}
       </div>
     </div>

@@ -13,7 +13,7 @@ import { existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { config as loadEnv } from "dotenv";
 import * as cognee from "@jarvis/cognee-client";
-import { analyzeScreen, askText, askVision } from "@jarvis/api-client";
+import { analyzeScreen } from "@jarvis/api-client";
 import { captureScreenshot } from "./services/screenshot";
 import { ensureCogneeRunning } from "./services/docker";
 import type { AskPayload, AskResult, DatasetName } from "./types";
@@ -28,13 +28,18 @@ for (const envPath of [
 ]) {
   if (existsSync(envPath)) {
     loadEnv({ path: envPath });
-    if (process.env.OPENAI_API_KEY) break;
+    if (process.env.COGNEE_URL || process.env.OPENROUTER_API_KEY) break;
   }
 }
 
-if (!process.env.OPENAI_API_KEY) {
-  console.warn("[felix] OPENAI_API_KEY not found in apps/desktop/.env");
+if (!process.env.OPENROUTER_API_KEY) {
+  console.warn("[felix] OPENROUTER_API_KEY not found in apps/desktop/.env");
 }
+
+const FELIX_RECALL_PROMPT =
+  "You are FelixAI, a personal desktop assistant with persistent memory. " +
+  "Answer concisely for a small popup window. Use the screen description when " +
+  "provided. Do not mention memory unless it is directly relevant to the answer.";
 
 const HOTKEY = "CommandOrControl+Shift+Space";
 const COMPACT_WIDTH = 700;
@@ -92,13 +97,7 @@ function createPopup(): BrowserWindow {
     void win.loadFile(join(__dirname, "../renderer/index.html"));
   }
 
-  win.on("blur", () => {
-    if (win.webContents.isDevToolsOpened()) return;
-    hidePopup();
-  });
-
-  // Escape dismisses the popup (Spotlight-style). Handled in main so it works
-  // regardless of which renderer element has focus.
+  // Dismiss only via ESC (global shortcut, header button, or key in popup).
   win.webContents.on("before-input-event", (_e, input) => {
     if (input.type === "keyDown" && input.key === "Escape") hidePopup();
   });
@@ -121,6 +120,7 @@ function expandWindow(): void {
 
 function hidePopup(): void {
   if (!popup || popup.isDestroyed()) return;
+  centerWindow(popup, COMPACT_WIDTH, COMPACT_HEIGHT);
   popup.hide();
   isPopupVisible = false;
   popup.webContents.send("vision:status", "idle");
@@ -226,25 +226,6 @@ function registerIpc(): void {
     const dataset: DatasetName = payload.dataset;
     const shot = lastScreenshot;
 
-    // Session recall first, so the answer can build on this sitting's context.
-    let memory = "";
-    try {
-      memory = await cognee.recall(payload.question, {
-        dataset,
-        sessionId: SESSION_ID,
-        scope: "session",
-      });
-    } catch (err) {
-      console.error("recall failed", err);
-    }
-
-    if (!process.env.OPENAI_API_KEY) {
-      return {
-        answer:
-          "No OPENAI_API_KEY set. Add it to apps/desktop/.env and restart FelixAI.",
-        usedMemory: Boolean(memory),
-      };
-    }
     if (!shot) {
       return {
         answer: "No screenshot was captured for this query.",
@@ -254,7 +235,7 @@ function registerIpc(): void {
 
     let screenContext = lastScreenContext;
     const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (!screenContext && openrouterKey && shot) {
+    if (!screenContext && openrouterKey) {
       try {
         screenContext = await analyzeScreen({
           apiKey: openrouterKey,
@@ -262,32 +243,34 @@ function registerIpc(): void {
         });
         lastScreenContext = screenContext;
       } catch (err) {
-        console.error("OpenRouter vision failed, falling back to OpenAI", err);
+        console.error("OpenRouter vision failed", err);
       }
     }
 
-    let answer: string;
-    try {
-      if (screenContext) {
-        answer = await askText({
-          apiKey: process.env.OPENAI_API_KEY,
-          question: payload.question,
-          screenContext,
-          memoryContext: memory,
+    const recallQuery = cognee.buildRecallQuery(payload.question, screenContext);
+    const cogneeUp = await cognee.health();
+
+    let answer = "";
+    let usedMemory = false;
+
+    if (cogneeUp) {
+      try {
+        const recalled = await cognee.recall(recallQuery, {
+          dataset,
+          sessionId: SESSION_ID,
+          scope: "auto",
+          searchType: "GRAPH_COMPLETION",
+          systemPrompt: FELIX_RECALL_PROMPT,
         });
-      } else {
-        answer = await askVision({
-          apiKey: process.env.OPENAI_API_KEY,
-          question: payload.question,
-          screenshotDataUrl: shot,
-          memoryContext: memory,
-        });
+        answer = recalled.text.trim();
+        usedMemory = recalled.usedMemory;
+      } catch (err) {
+        console.error("recall failed", err);
       }
-    } catch (err) {
-      return {
-        answer: `AI error: ${(err as Error).message}`,
-        usedMemory: Boolean(memory),
-      };
+    }
+
+    if (!answer) {
+      answer = cognee.buildFallbackAnswer(screenContext, cogneeUp);
     }
 
     const rememberContext =
@@ -308,7 +291,7 @@ function registerIpc(): void {
       })
       .catch((err) => console.error("remember failed", err));
 
-    return { answer, usedMemory: Boolean(memory) };
+    return { answer, usedMemory };
   });
 
   ipcMain.handle(
