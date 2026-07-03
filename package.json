@@ -5,6 +5,7 @@
   "packageManager": "pnpm@10.16.1",
   "scripts": {
     "dev": "turbo run dev --filter=@jarvis/desktop",
+    "dev:web": "turbo run dev --filter=@jarvis/web",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "icon": "node scripts/make-icon.mjs",

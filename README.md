@@ -16,7 +16,7 @@ apps/
   desktop/            Electron + Vite + React + TS + Tailwind (the companion app)
     electron/         main process: tray, global hotkey, screenshot, IPC orchestration
     src/              renderer: chat popup, memory view
-  web/                Next.js landing page (built last)
+  web/                Next.js landing page (hackathon demo site)
 packages/
   cognee-client/      typed REST client for self-hosted Cognee (remember/recall/improve/forget)
   api-client/         OpenRouter screen analysis (Llama 3.2 vision)
@@ -47,7 +47,8 @@ curl http://localhost:8000/health   # expect healthy
 pnpm install
 cp apps/desktop/.env.example apps/desktop/.env
 # add OPENROUTER_API_KEY (and DEEPGRAM_API_KEY for voice) to apps/desktop/.env
-pnpm dev
+pnpm dev              # desktop app
+pnpm dev:web          # landing page at http://localhost:3000
 ```
 
 Press `Ctrl+Shift+Space` anywhere to summon Jarvis.
