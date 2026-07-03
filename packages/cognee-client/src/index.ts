@@ -135,6 +135,58 @@ export async function listDatasets(): Promise<MemoryItem[]> {
   }
 }
 
+/** Browser URL for Cognee's interactive knowledge-graph page. */
+export function visualizeGraphUrl(datasetId: string): string {
+  return `${BASE()}/api/v1/visualize?dataset_id=${encodeURIComponent(datasetId)}`;
+}
+
+/** Resolve a dataset UUID by human-readable name (e.g. "main"). */
+export async function findDatasetIdByName(name: string): Promise<string | null> {
+  const items = await listDatasets();
+  for (const item of items) {
+    const itemName = (item.name ?? item.dataset_name) as string | undefined;
+    const itemId = (item.id ?? item.dataset_id) as string | undefined;
+    if (itemName === name && itemId) return String(itemId);
+  }
+  return null;
+}
+
+/**
+ * F9 — interactive knowledge-graph HTML from Cognee (GET /api/v1/visualize).
+ * Lazy-load in the Memory tab only — not on the chat hot path.
+ */
+export async function visualizeGraph(datasetId: string): Promise<string> {
+  const res = await fetch(visualizeGraphUrl(datasetId));
+  const body = await safeText(res);
+
+  if (!res.ok) {
+    let message = body.slice(0, 300);
+    try {
+      const parsed = JSON.parse(body) as { error?: string; detail?: unknown };
+      message = parsed.error ?? JSON.stringify(parsed.detail ?? body).slice(0, 300);
+    } catch {
+      /* use raw body */
+    }
+    throw new Error(`visualize failed (${res.status}): ${message}`);
+  }
+
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    try {
+      const parsed = JSON.parse(body) as { error?: string };
+      throw new Error(parsed.error ?? "visualize returned JSON instead of HTML");
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith("visualize")) throw e;
+    }
+  }
+
+  if (!body.trim().startsWith("<")) {
+    throw new Error("visualize returned unexpected content");
+  }
+
+  return body;
+}
+
 /** Format a single session/graph recall hit into readable context for the LLM. */
 function formatRecallItem(item: Record<string, unknown>): string {
   const q = item.question ?? item.query;

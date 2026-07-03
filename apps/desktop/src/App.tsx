@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChatView } from "./components/ChatView";
 import { MemoryView } from "./components/MemoryView";
+import { OnboardingView } from "./components/OnboardingView";
 
 type Tab = "chat" | "memory";
 
@@ -8,15 +9,30 @@ export function App() {
   const [tab, setTab] = useState<Tab>("chat");
   const [dataset, setDataset] = useState<"main" | "private">("main");
   const [cogneeUp, setCogneeUp] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(true);
 
-  useEffect(() => {
+  const refreshStatus = useCallback(() => {
     window.api
       .getStatus()
-      .then((s) => setCogneeUp(s.cogneeUp))
+      .then((s) => {
+        setCogneeUp(s.cogneeUp);
+        setOnboardingComplete(s.onboardingComplete);
+      })
       .catch(() => setCogneeUp(false));
-  }, [tab]);
+  }, []);
 
-  useEffect(() => window.api.onShown(() => setTab("chat")), []);
+  useEffect(() => {
+    refreshStatus();
+  }, [tab, refreshStatus]);
+
+  useEffect(
+    () =>
+      window.api.onShown(() => {
+        refreshStatus();
+        setTab("chat");
+      }),
+    [refreshStatus],
+  );
 
   return (
     <div className="flex h-full w-full animate-fade-in bg-transparent p-1">
@@ -51,31 +67,45 @@ export function App() {
           </div>
         </header>
 
-        <nav className="no-drag flex gap-1 px-6 pb-2">
-          {(["chat", "memory"] as Tab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`rounded-lg px-3 py-1 text-xs capitalize transition ${
-                tab === t
-                  ? "bg-white/10 text-white"
-                  : "text-white/45 hover:text-white/75"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </nav>
+        {onboardingComplete ? (
+          <>
+            <nav className="no-drag flex gap-1 px-6 pb-2">
+              {(["chat", "memory"] as Tab[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={`rounded-lg px-3 py-1 text-xs capitalize transition ${
+                    tab === t
+                      ? "bg-white/10 text-white"
+                      : "text-white/45 hover:text-white/75"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </nav>
 
-        <main className="no-drag min-h-0 flex-1 overflow-hidden px-6 pb-6">
-          <div className={tab === "chat" ? "flex h-full flex-col" : "hidden"}>
-            <ChatView dataset={dataset} setDataset={setDataset} />
-          </div>
-          <div className={tab === "memory" ? "flex h-full flex-col" : "hidden"}>
-            <MemoryView />
-          </div>
-        </main>
+            <main className="no-drag min-h-0 flex-1 overflow-hidden px-6 pb-6">
+              <div
+                className={tab === "chat" ? "flex h-full flex-col" : "hidden"}
+              >
+                <ChatView dataset={dataset} setDataset={setDataset} />
+              </div>
+              <div
+                className={tab === "memory" ? "flex h-full flex-col" : "hidden"}
+              >
+                <MemoryView active={tab === "memory"} />
+              </div>
+            </main>
+          </>
+        ) : (
+          <main className="no-drag min-h-0 flex-1 overflow-hidden px-6 pb-6">
+            <OnboardingView
+              onComplete={() => setOnboardingComplete(true)}
+            />
+          </main>
+        )}
       </div>
     </div>
   );

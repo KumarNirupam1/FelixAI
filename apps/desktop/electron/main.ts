@@ -7,6 +7,7 @@ import {
   ipcMain,
   nativeImage,
   screen,
+  shell,
 } from "electron";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
@@ -16,6 +17,13 @@ import * as cognee from "@jarvis/cognee-client";
 import { analyzeScreen } from "@jarvis/api-client";
 import { captureScreenshot } from "./services/screenshot";
 import { ensureCogneeRunning } from "./services/docker";
+import {
+  isOnboardingComplete,
+  markOnboardingComplete,
+  ONBOARDING_QUESTIONS,
+} from "./services/onboarding";
+import { parseUserCommand } from "./services/commands";
+import { FELIX_RECALL_PROMPT } from "./prompts";
 import type { AskPayload, AskResult, DatasetName } from "./types";
 
 // Resolve apps/desktop/.env regardless of where the dev server was launched.
@@ -35,11 +43,6 @@ for (const envPath of [
 if (!process.env.OPENROUTER_API_KEY) {
   console.warn("[felix] OPENROUTER_API_KEY not found in apps/desktop/.env");
 }
-
-const FELIX_RECALL_PROMPT =
-  "You are FelixAI, a personal desktop assistant with persistent memory. " +
-  "Answer concisely for a small popup window. Use the screen description when " +
-  "provided. Do not mention memory unless it is directly relevant to the answer.";
 
 const HOTKEY = "CommandOrControl+Shift+Space";
 const COMPACT_WIDTH = 700;
@@ -155,11 +158,11 @@ async function analyzeScreenInBackground(): Promise<void> {
   }
 }
 
-function notifyPopupShown(): void {
+function notifyPopupShown(skipVision = false): void {
   if (!popup || popup.isDestroyed()) return;
   const notify = () => {
     popup?.webContents.send("popup:shown");
-    void analyzeScreenInBackground();
+    if (!skipVision) void analyzeScreenInBackground();
   };
   if (popup.webContents.isLoading()) {
     popup.webContents.once("did-finish-load", notify);
@@ -168,11 +171,8 @@ function notifyPopupShown(): void {
   }
 }
 
-/** Capture screenshot first, then show centered popup (FlickAI-style). */
+/** First hotkey opens onboarding (no screenshot). After that, normal summon. */
 async function summon(): Promise<void> {
-  lastScreenshot = await captureScreenshot();
-  lastScreenContext = "";
-
   if (!popup || popup.isDestroyed()) popup = createPopup();
   const win = popup;
 
@@ -181,6 +181,16 @@ async function summon(): Promise<void> {
   win.focus();
   isPopupVisible = true;
 
+  if (!isOnboardingComplete()) {
+    lastScreenshot = null;
+    lastScreenContext = "";
+    sendVisionStatus("idle");
+    notifyPopupShown(true);
+    return;
+  }
+
+  lastScreenshot = await captureScreenshot();
+  lastScreenContext = "";
   notifyPopupShown();
 }
 
@@ -222,9 +232,81 @@ function maybeImproveAfterInteraction(dataset: DatasetName): void {
 }
 
 function registerIpc(): void {
+  ipcMain.handle("getOnboardingState", () => ({
+    complete: isOnboardingComplete(),
+    questions: ONBOARDING_QUESTIONS.map((q) => q.question),
+  }));
+
+  ipcMain.handle(
+    "completeOnboarding",
+    (
+      _e,
+      answers: string[],
+    ): { ok: boolean; error?: string } => {
+      if (answers.length !== ONBOARDING_QUESTIONS.length) {
+        return { ok: false, error: "Please answer all questions" };
+      }
+
+      for (let i = 0; i < ONBOARDING_QUESTIONS.length; i++) {
+        const entry = ONBOARDING_QUESTIONS[i];
+        const answer = answers[i]?.trim();
+        if (!entry || !answer) {
+          return { ok: false, error: "Please answer all questions" };
+        }
+      }
+
+      // Mark done immediately — Cognee writes run in background (no UI blocking).
+      markOnboardingComplete();
+      datasetsTouched.add("main");
+
+      for (let i = 0; i < ONBOARDING_QUESTIONS.length; i++) {
+        const entry = ONBOARDING_QUESTIONS[i]!;
+        const answer = answers[i]!.trim();
+        void cognee
+          .rememberQA(
+            {
+              question: entry.question,
+              answer,
+              context: entry.rememberContext,
+            },
+            { dataset: "main", sessionId: SESSION_ID },
+          )
+          .catch((err) => console.error("onboarding remember failed", err));
+      }
+
+      void cognee
+        .improve({ dataset: "main", sessionIds: [SESSION_ID] })
+        .catch((err) => console.error("onboarding improve failed", err));
+
+      return { ok: true };
+    },
+  );
+
   ipcMain.handle("ask", async (_e, payload: AskPayload): Promise<AskResult> => {
+    if (!isOnboardingComplete()) {
+      return {
+        answer: "Complete the setup questions first, then ask about your screen.",
+        usedMemory: false,
+      };
+    }
     const dataset: DatasetName = payload.dataset;
     const shot = lastScreenshot;
+    const command = parseUserCommand(payload.question);
+
+    if (command?.kind === "forget") {
+      try {
+        await cognee.forget(command.dataset);
+        return {
+          answer: `Forgot the ${command.dataset} dataset.`,
+          usedMemory: false,
+        };
+      } catch (err) {
+        return {
+          answer: `Could not forget: ${(err as Error).message}`,
+          usedMemory: false,
+        };
+      }
+    }
 
     if (!shot) {
       return {
@@ -245,6 +327,29 @@ function registerIpc(): void {
       } catch (err) {
         console.error("OpenRouter vision failed", err);
       }
+    }
+
+    if (command?.kind === "remember") {
+      const rememberContext =
+        screenContext.slice(0, 2000) || "Explicit remember command";
+      const answer = "Got it — I'll remember that.";
+
+      void cognee
+        .rememberQA(
+          {
+            question: payload.question,
+            answer: command.note,
+            context: rememberContext,
+          },
+          { dataset, sessionId: SESSION_ID },
+        )
+        .then((res) => {
+          popup?.webContents.send("remember:done", { qaId: res.id });
+          maybeImproveAfterInteraction(dataset);
+        })
+        .catch((err) => console.error("remember command failed", err));
+
+      return { answer, usedMemory: false };
     }
 
     const recallQuery = cognee.buildRecallQuery(payload.question, screenContext);
@@ -299,9 +404,13 @@ function registerIpc(): void {
     async (_e, qaId: string, score: number, dataset: DatasetName) => {
       try {
         if (qaId) {
-          await cognee.feedback(qaId, score, { dataset, sessionId: SESSION_ID });
+          void cognee
+            .feedback(qaId, score, { dataset, sessionId: SESSION_ID })
+            .catch((err) => console.error("feedback failed", err));
         }
-        await cognee.improve({ dataset, sessionIds: [SESSION_ID] });
+        void cognee
+          .improve({ dataset, sessionIds: [SESSION_ID] })
+          .catch((err) => console.error("improve after feedback failed", err));
         return { ok: true };
       } catch (err) {
         return { ok: false, error: (err as Error).message };
@@ -310,6 +419,40 @@ function registerIpc(): void {
   );
 
   ipcMain.handle("listMemory", async () => cognee.listDatasets());
+
+  ipcMain.handle(
+    "openMemoryGraph",
+    async (
+      _e,
+      datasetName: DatasetName,
+    ): Promise<{ ok: boolean; error?: string }> => {
+      try {
+        const up = await cognee.health();
+        if (!up) {
+          return { ok: false, error: "Cognee is offline. Start Docker and try again." };
+        }
+
+        const datasetId = await cognee.findDatasetIdByName(datasetName);
+        if (!datasetId) {
+          return {
+            ok: false,
+            error:
+              `No "${datasetName}" dataset yet. Chat or finish onboarding first.`,
+          };
+        }
+
+        const url = cognee.visualizeGraphUrl(datasetId);
+        if (!/^https?:\/\//.test(url)) {
+          return { ok: false, error: "Invalid graph URL." };
+        }
+
+        await shell.openExternal(url);
+        return { ok: true };
+      } catch (err) {
+        return { ok: false, error: (err as Error).message };
+      }
+    },
+  );
 
   ipcMain.handle("forgetPrivate", async () => {
     try {
@@ -323,6 +466,7 @@ function registerIpc(): void {
   ipcMain.handle("getStatus", async () => ({
     cogneeUp: await cognee.health(),
     sessionId: SESSION_ID,
+    onboardingComplete: isOnboardingComplete(),
   }));
 
   ipcMain.handle("hidePopup", () => hidePopup());

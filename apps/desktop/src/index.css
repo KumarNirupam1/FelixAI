@@ -77,6 +77,40 @@ body {
   animation: slide-up 0.25s ease-out;
 }
 
+@keyframes onboarding-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes onboarding-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.onboarding-step-forward {
+  animation: onboarding-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-step-back {
+  animation: onboarding-back 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.onboarding-progress {
+  transition: width 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

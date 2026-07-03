@@ -69,7 +69,7 @@ export function ChatView({ dataset, setDataset }: Props) {
         {messages.length > 0 && (
           <div className="space-y-4 py-2">
             {messages.map((m, i) => (
-              <MessageBubble key={i} message={m} />
+              <MessageBubble key={i} message={m} dataset={dataset} />
             ))}
             {loading && (
               <div className="flex justify-start">

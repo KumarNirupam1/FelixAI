@@ -27,10 +27,25 @@ const api = {
     ipcRenderer.invoke("feedback", qaId, score, dataset),
   listMemory: (): Promise<Array<Record<string, unknown>>> =>
     ipcRenderer.invoke("listMemory"),
+  openMemoryGraph: (
+    dataset: DatasetName,
+  ): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke("openMemoryGraph", dataset),
   forgetPrivate: (): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke("forgetPrivate"),
-  getStatus: (): Promise<{ cogneeUp: boolean; sessionId: string }> =>
-    ipcRenderer.invoke("getStatus"),
+  getStatus: (): Promise<{
+    cogneeUp: boolean;
+    sessionId: string;
+    onboardingComplete: boolean;
+  }> => ipcRenderer.invoke("getStatus"),
+  getOnboardingState: (): Promise<{
+    complete: boolean;
+    questions: string[];
+  }> => ipcRenderer.invoke("getOnboardingState"),
+  completeOnboarding: (
+    answers: string[],
+  ): Promise<{ ok: boolean; error?: string }> =>
+    ipcRenderer.invoke("completeOnboarding", answers),
   hide: (): Promise<void> => ipcRenderer.invoke("hidePopup"),
   expandWindow: (): Promise<void> => ipcRenderer.invoke("expandWindow"),
   recaptureScreen: (): Promise<void> => ipcRenderer.invoke("recaptureScreen"),

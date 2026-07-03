@@ -1,11 +1,13 @@
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "../hooks/useAsk";
+import { FeedbackButtons } from "./FeedbackButtons";
 
 interface Props {
   message: ChatMessage;
+  dataset: "main" | "private";
 }
 
-export function MessageBubble({ message }: Props) {
+export function MessageBubble({ message, dataset }: Props) {
   const isUser = message.role === "user";
 
   return (
@@ -56,6 +58,9 @@ export function MessageBubble({ message }: Props) {
         )}
         {!isUser && message.usedMemory && (
           <p className="mt-2 text-[10px] text-white/35">memory retrieved</p>
+        )}
+        {!isUser && (
+          <FeedbackButtons qaId={message.qaId} dataset={dataset} />
         )}
       </div>
     </div>

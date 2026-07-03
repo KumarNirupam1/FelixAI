@@ -46,3 +46,7 @@ export interface MemoryItem {
   name?: string;
   [key: string]: unknown;
 }
+
+export interface VisualizeResult {
+  html: string;
+}

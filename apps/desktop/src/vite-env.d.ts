@@ -24,8 +24,22 @@ interface FelixApi {
     dataset: "main" | "private",
   ) => Promise<{ ok: boolean; error?: string }>;
   listMemory: () => Promise<Array<Record<string, unknown>>>;
+  openMemoryGraph: (
+    dataset: "main" | "private",
+  ) => Promise<{ ok: boolean; error?: string }>;
   forgetPrivate: () => Promise<{ ok: boolean; error?: string }>;
-  getStatus: () => Promise<{ cogneeUp: boolean; sessionId: string }>;
+  getStatus: () => Promise<{
+    cogneeUp: boolean;
+    sessionId: string;
+    onboardingComplete: boolean;
+  }>;
+  getOnboardingState: () => Promise<{
+    complete: boolean;
+    questions: string[];
+  }>;
+  completeOnboarding: (
+    answers: string[],
+  ) => Promise<{ ok: boolean; error?: string }>;
   hide: () => Promise<void>;
   expandWindow: () => Promise<void>;
   recaptureScreen: () => Promise<void>;
