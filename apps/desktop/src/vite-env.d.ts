@@ -1,8 +1,17 @@
 /// <reference types="vite/client" />
 
-interface JarvisApi {
+interface ImportMetaEnv {
+  readonly VITE_DEEPGRAM_API_KEY?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+interface FelixApi {
   onScreenshot: (cb: (dataUrl: string | null) => void) => () => void;
   onRememberDone: (cb: (payload: { qaId?: string }) => void) => () => void;
+  onShown: (cb: () => void) => () => void;
   ask: (payload: {
     question: string;
     dataset: "main" | "private";
@@ -19,5 +28,5 @@ interface JarvisApi {
 }
 
 interface Window {
-  api: JarvisApi;
+  api: FelixApi;
 }

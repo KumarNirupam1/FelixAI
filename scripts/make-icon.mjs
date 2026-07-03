@@ -4,7 +4,7 @@ import { deflateSync } from "node:zlib";
 import { writeFileSync, mkdirSync } from "node:fs";
 
 const W = 32, H = 32;
-const accent = [0x7c, 0x5c, 0xff];
+const accent = [0xc8, 0xc8, 0xd2];
 
 const stride = 1 + W * 4;
 const raw = Buffer.alloc(H * stride);

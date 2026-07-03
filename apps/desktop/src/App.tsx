@@ -18,62 +18,68 @@ export function App() {
       .catch(() => setCogneeUp(false));
   }, [tab]);
 
+  useEffect(() => window.api.onShown(() => setTab("chat")), []);
+
   return (
-    <div className="flex h-full flex-col bg-white/5 backdrop-blur-xl">
-      <header className="drag flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 rounded-full bg-accent" />
-          <span className="text-sm font-semibold tracking-tight">Jarvis</span>
-        </div>
-        <div className="no-drag flex items-center gap-3 text-xs">
-          <span
-            className={`flex items-center gap-1 ${
-              cogneeUp ? "text-emerald-400" : "text-amber-400"
-            }`}
-          >
+    <div className="h-full p-1 animate-fade-in">
+      <div className="glass flex h-full flex-col overflow-hidden rounded-2xl">
+        <header className="drag flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-white/50" />
+            <span className="text-sm font-medium tracking-wide text-white/85">
+              FelixAI
+            </span>
+          </div>
+          <div className="no-drag flex items-center gap-3 text-xs">
             <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                cogneeUp ? "bg-emerald-400" : "bg-amber-400"
+              className={`flex items-center gap-1.5 ${
+                cogneeUp ? "text-emerald-400/90" : "text-amber-400/90"
               }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  cogneeUp ? "bg-emerald-400" : "bg-amber-400"
+                }`}
+              />
+              {cogneeUp ? "memory online" : "memory offline"}
+            </span>
+            <button
+              className="rounded-md px-2 py-1 text-white/40 transition hover:bg-white/5 hover:text-white/80"
+              onClick={() => void window.api.hide()}
+            >
+              ESC
+            </button>
+          </div>
+        </header>
+
+        <nav className="no-drag flex gap-1 px-3 pb-1">
+          {(["chat", "memory"] as Tab[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`rounded-lg px-3 py-1 text-xs capitalize transition ${
+                tab === t
+                  ? "bg-white/10 text-white"
+                  : "text-white/45 hover:text-white/75"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </nav>
+
+        <main className="no-drag min-h-0 flex-1 overflow-hidden px-3 pb-3">
+          {tab === "chat" ? (
+            <ChatView
+              dataset={dataset}
+              setDataset={setDataset}
+              screenshot={screenshot}
             />
-            {cogneeUp ? "memory online" : "memory offline"}
-          </span>
-          <button
-            className="opacity-60 transition hover:opacity-100"
-            onClick={() => void window.api.hide()}
-          >
-            ✕
-          </button>
-        </div>
-      </header>
-
-      <nav className="no-drag flex gap-1 px-3">
-        {(["chat", "memory"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`rounded-md px-3 py-1 text-xs capitalize transition ${
-              tab === t
-                ? "bg-white/10 text-white"
-                : "text-white/50 hover:text-white/80"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </nav>
-
-      <main className="no-drag flex-1 overflow-hidden p-3">
-        {tab === "chat" ? (
-          <ChatView
-            dataset={dataset}
-            setDataset={setDataset}
-            screenshot={screenshot}
-          />
-        ) : (
-          <MemoryView />
-        )}
-      </main>
+          ) : (
+            <MemoryView />
+          )}
+        </main>
+      </div>
     </div>
   );
 }

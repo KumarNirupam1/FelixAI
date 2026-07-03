@@ -3,6 +3,19 @@ export interface VisionRequest {
   question: string;
   screenshotDataUrl: string;
   memoryContext?: string;
-  /** Defaults to gpt-4o-mini (vision-capable). */
+  model?: string;
+}
+
+export interface ScreenAnalysisRequest {
+  apiKey: string;
+  screenshotDataUrl: string;
+  model?: string;
+}
+
+export interface TextAskRequest {
+  apiKey: string;
+  question: string;
+  screenContext: string;
+  memoryContext?: string;
   model?: string;
 }

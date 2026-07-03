@@ -12,7 +12,7 @@ export function Toggle({ checked, onChange, label }: ToggleProps) {
       <span
         onClick={() => onChange(!checked)}
         className={`relative h-4 w-7 rounded-full transition ${
-          checked ? "bg-accent" : "bg-white/20"
+          checked ? "bg-white/30" : "bg-white/15"
         }`}
       >
         <span

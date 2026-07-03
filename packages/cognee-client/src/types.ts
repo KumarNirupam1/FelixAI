@@ -1,9 +1,13 @@
 export type DatasetName = "main" | "private";
 
+export type RecallScope = "session" | "auto" | "graph";
+
 export interface RecallOptions {
   dataset: string;
   sessionId: string;
   topK?: number;
+  /** "session" = same-sitting cache; "auto" = session then graph. */
+  scope?: RecallScope;
 }
 
 export interface RememberOptions {

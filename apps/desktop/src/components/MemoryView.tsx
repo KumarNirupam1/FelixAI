@@ -23,7 +23,7 @@ export function MemoryView() {
   return (
     <div className="flex h-full flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-white/50">what Jarvis remembers</span>
+        <span className="text-xs text-white/50">what FelixAI remembers</span>
         <button
           onClick={() => void forgetPrivate()}
           className="rounded-md bg-red-500/20 px-2 py-1 text-[11px] text-red-300 transition hover:bg-red-500/30"

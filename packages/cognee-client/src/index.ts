@@ -60,11 +60,12 @@ export async function rememberQA(
     throw new Error(`remember failed: ${res.status} ${await safeText(res)}`);
   }
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  // Verified live: remember/entry returns qa_id on session_stored.
   return {
     id:
-      (data.id as string) ??
       (data.qa_id as string) ??
-      (data.entry_id as string),
+      (data.entry_id as string) ??
+      (data.id as string),
   };
 }
 
@@ -74,6 +75,7 @@ export async function recall(query: string, o: RecallOptions): Promise<string> {
     query,
     datasets: [o.dataset],
     session_id: o.sessionId,
+    scope: o.scope ?? "session",
     search_type: null,
     top_k: o.topK ?? 10,
   });
@@ -126,32 +128,66 @@ export async function listDatasets(): Promise<MemoryItem[]> {
   }
 }
 
+/** Format a single session/graph recall hit into readable context for the LLM. */
+function formatRecallItem(item: Record<string, unknown>): string {
+  const q = item.question ?? item.query;
+  const a = item.answer ?? item.content ?? item.text;
+  if (typeof q === "string" && typeof a === "string") {
+    const src = item.source ? ` [${item.source}]` : "";
+    return `Q: ${q}\nA: ${a}${src}`;
+  }
+  if (typeof a === "string") return a;
+  if (typeof q === "string") return q;
+  return JSON.stringify(item);
+}
+
 /**
- * The exact /recall response shape is only fully confirmable once
- * LLM_API_KEY is set in the cognee container. This is deliberately the
- * ONE place to adjust after the first real recall — everything else stays.
+ * Normalize /recall JSON into plain text for the vision system prompt.
+ * Handles session-scoped hits (source:"session") verified on cognee 1.2.2-local.
  */
 export function extractRecallText(data: unknown): string {
   if (data == null) return "";
   if (typeof data === "string") return data;
-  const d = data as Record<string, any>;
-  if (Array.isArray(d)) {
-    return d
-      .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
-      .join("\n");
+
+  if (Array.isArray(data)) {
+    return data
+      .map((x) =>
+        typeof x === "string"
+          ? x
+          : typeof x === "object" && x
+            ? formatRecallItem(x as Record<string, unknown>)
+            : JSON.stringify(x),
+      )
+      .filter(Boolean)
+      .join("\n\n");
   }
-  if (d.result?.data) {
-    return typeof d.result.data === "string"
-      ? d.result.data
-      : JSON.stringify(d.result.data);
+
+  const d = data as Record<string, unknown>;
+
+  if (Array.isArray(d.results)) {
+    return d.results
+      .map((x) =>
+        typeof x === "string"
+          ? x
+          : formatRecallItem(x as Record<string, unknown>),
+      )
+      .filter(Boolean)
+      .join("\n\n");
   }
-  if (d.searchResponse?.result?.data) return String(d.searchResponse.result.data);
+
+  if (d.result && typeof d.result === "object") {
+    const r = d.result as Record<string, unknown>;
+    if (Array.isArray(r.data)) {
+      return r.data
+        .map((x) => formatRecallItem(x as Record<string, unknown>))
+        .join("\n\n");
+    }
+    if (typeof r.data === "string") return r.data;
+  }
+
   if (typeof d.answer === "string") return d.answer;
-  if (d.results) {
-    return Array.isArray(d.results)
-      ? d.results.map((x: unknown) => (typeof x === "string" ? x : JSON.stringify(x))).join("\n")
-      : String(d.results);
-  }
+  if (typeof d.content === "string") return d.content;
+
   return JSON.stringify(d);
 }
 

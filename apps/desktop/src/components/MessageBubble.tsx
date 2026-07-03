@@ -1,28 +1,61 @@
+import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "../hooks/useAsk";
-import { FeedbackButtons } from "./FeedbackButtons";
 
 interface Props {
   message: ChatMessage;
-  dataset: "main" | "private";
 }
 
-export function MessageBubble({ message, dataset }: Props) {
+export function MessageBubble({ message }: Props) {
   const isUser = message.role === "user";
+
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`flex animate-slide-up ${isUser ? "justify-end" : "justify-start"}`}
+    >
       <div
-        className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-          isUser ? "bg-accent text-white" : "bg-white/10 text-white/90"
+        className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm ${
+          isUser
+            ? "bg-white/12 text-white shadow-sm"
+            : "border border-white/8 bg-white/5 text-white/90 backdrop-blur-sm"
         }`}
       >
-        <p className="whitespace-pre-wrap">{message.text}</p>
-        {!isUser && (
-          <div className="mt-1.5 flex items-center gap-2">
-            {message.usedMemory && (
-              <span className="text-[10px] text-white/40">recalled memory</span>
-            )}
-            <FeedbackButtons qaId={message.qaId} dataset={dataset} />
+        {isUser ? (
+          <p className="whitespace-pre-wrap leading-relaxed">{message.text}</p>
+        ) : (
+          <div className="prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown
+              components={{
+                p: ({ children }) => (
+                  <p className="mb-2 last:mb-0 leading-relaxed text-white/90">
+                    {children}
+                  </p>
+                ),
+                ul: ({ children }) => (
+                  <ul className="mb-2 list-inside list-disc space-y-1 pl-1 text-white/85">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="mb-2 list-inside list-decimal space-y-1 pl-1 text-white/85">
+                    {children}
+                  </ol>
+                ),
+                strong: ({ children }) => (
+                  <strong className="font-semibold text-white">{children}</strong>
+                ),
+                code: ({ children }) => (
+                  <code className="rounded bg-white/10 px-1 py-0.5 font-mono text-xs text-white/80">
+                    {children}
+                  </code>
+                ),
+              }}
+            >
+              {message.text}
+            </ReactMarkdown>
           </div>
+        )}
+        {!isUser && message.usedMemory && (
+          <p className="mt-2 text-[10px] text-white/35">recalled memory</p>
         )}
       </div>
     </div>

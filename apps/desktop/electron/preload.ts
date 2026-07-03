@@ -12,6 +12,11 @@ const api = {
     ipcRenderer.on("remember:done", listener);
     return () => ipcRenderer.removeListener("remember:done", listener);
   },
+  onShown: (cb: () => void): (() => void) => {
+    const listener = () => cb();
+    ipcRenderer.on("popup:shown", listener);
+    return () => ipcRenderer.removeListener("popup:shown", listener);
+  },
   ask: (payload: AskPayload): Promise<AskResult> =>
     ipcRenderer.invoke("ask", payload),
   submitFeedback: (
