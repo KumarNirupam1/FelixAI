@@ -8,10 +8,12 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+type VisionStatus = "idle" | "analyzing" | "ready" | "failed";
+
 interface FelixApi {
-  onScreenshot: (cb: (dataUrl: string | null) => void) => () => void;
   onRememberDone: (cb: (payload: { qaId?: string }) => void) => () => void;
   onShown: (cb: () => void) => () => void;
+  onVisionStatus: (cb: (status: VisionStatus) => void) => () => void;
   ask: (payload: {
     question: string;
     dataset: "main" | "private";
@@ -25,6 +27,8 @@ interface FelixApi {
   forgetPrivate: () => Promise<{ ok: boolean; error?: string }>;
   getStatus: () => Promise<{ cogneeUp: boolean; sessionId: string }>;
   hide: () => Promise<void>;
+  expandWindow: () => Promise<void>;
+  recaptureScreen: () => Promise<void>;
 }
 
 interface Window {

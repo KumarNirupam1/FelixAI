@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChatView } from "./components/ChatView";
 import { MemoryView } from "./components/MemoryView";
-import { useScreenshot } from "./hooks/useScreenshot";
 
 type Tab = "chat" | "memory";
 
@@ -9,7 +8,6 @@ export function App() {
   const [tab, setTab] = useState<Tab>("chat");
   const [dataset, setDataset] = useState<"main" | "private">("main");
   const [cogneeUp, setCogneeUp] = useState(false);
-  const screenshot = useScreenshot();
 
   useEffect(() => {
     window.api
@@ -21,12 +19,12 @@ export function App() {
   useEffect(() => window.api.onShown(() => setTab("chat")), []);
 
   return (
-    <div className="h-full p-1 animate-fade-in">
-      <div className="glass flex h-full flex-col overflow-hidden rounded-2xl">
-        <header className="drag flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-white/50" />
-            <span className="text-sm font-medium tracking-wide text-white/85">
+    <div className="flex h-full w-full animate-fade-in bg-transparent p-1">
+      <div className="glass flex h-full w-full flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+        <header className="drag-region flex items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-white/40" />
+            <span className="text-sm font-medium tracking-wide text-white/80">
               FelixAI
             </span>
           </div>
@@ -44,6 +42,7 @@ export function App() {
               {cogneeUp ? "memory online" : "memory offline"}
             </span>
             <button
+              type="button"
               className="rounded-md px-2 py-1 text-white/40 transition hover:bg-white/5 hover:text-white/80"
               onClick={() => void window.api.hide()}
             >
@@ -52,10 +51,11 @@ export function App() {
           </div>
         </header>
 
-        <nav className="no-drag flex gap-1 px-3 pb-1">
+        <nav className="no-drag flex gap-1 px-6 pb-2">
           {(["chat", "memory"] as Tab[]).map((t) => (
             <button
               key={t}
+              type="button"
               onClick={() => setTab(t)}
               className={`rounded-lg px-3 py-1 text-xs capitalize transition ${
                 tab === t
@@ -68,13 +68,9 @@ export function App() {
           ))}
         </nav>
 
-        <main className="no-drag min-h-0 flex-1 overflow-hidden px-3 pb-3">
+        <main className="no-drag min-h-0 flex-1 overflow-hidden px-6 pb-6">
           {tab === "chat" ? (
-            <ChatView
-              dataset={dataset}
-              setDataset={setDataset}
-              screenshot={screenshot}
-            />
+            <ChatView dataset={dataset} setDataset={setDataset} />
           ) : (
             <MemoryView />
           )}

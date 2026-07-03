@@ -37,6 +37,8 @@ if (!process.env.OPENAI_API_KEY) {
 }
 
 const HOTKEY = "CommandOrControl+Shift+Space";
+const COMPACT_WIDTH = 700;
+const COMPACT_HEIGHT = 440;
 const SESSION_ID = randomUUID();
 const IMPROVE_EVERY_N = 5;
 
@@ -57,21 +59,23 @@ const TRAY_ICON =
 let tray: Tray | null = null;
 let popup: BrowserWindow | null = null;
 let lastScreenshot: string | null = null;
+let lastScreenContext = "";
+let isPopupVisible = false;
 
 const rendererDevUrl = process.env["ELECTRON_RENDERER_URL"];
 
 function createPopup(): BrowserWindow {
   const win = new BrowserWindow({
-    width: 440,
-    height: 560,
+    width: COMPACT_WIDTH,
+    height: COMPACT_HEIGHT,
     show: false,
     frame: false,
-    resizable: false,
+    transparent: true,
+    resizable: true,
     skipTaskbar: true,
     alwaysOnTop: true,
-    // Windows 11 frosted-glass. backgroundColor with alpha lets the material show.
+    hasShadow: false,
     backgroundColor: "#00000000",
-    backgroundMaterial: "acrylic",
     webPreferences: {
       preload: join(__dirname, "../preload/index.js"),
       contextIsolation: true,
@@ -90,53 +94,103 @@ function createPopup(): BrowserWindow {
 
   win.on("blur", () => {
     if (win.webContents.isDevToolsOpened()) return;
-    win.hide();
+    hidePopup();
   });
 
   // Escape dismisses the popup (Spotlight-style). Handled in main so it works
   // regardless of which renderer element has focus.
   win.webContents.on("before-input-event", (_e, input) => {
-    if (input.type === "keyDown" && input.key === "Escape") win.hide();
+    if (input.type === "keyDown" && input.key === "Escape") hidePopup();
   });
 
   return win;
 }
 
-function positionNearCursor(win: BrowserWindow): void {
-  const cursor = screen.getCursorScreenPoint();
-  const area = screen.getDisplayNearestPoint(cursor).workArea;
-  const [w, h] = win.getSize();
-  let x = cursor.x + 8;
-  let y = cursor.y + 8;
-  if (x + w > area.x + area.width) x = area.x + area.width - w - 8;
-  if (y + h > area.y + area.height) y = area.y + area.height - h - 8;
-  if (x < area.x) x = area.x + 8;
-  if (y < area.y) y = area.y + 8;
-  win.setPosition(Math.round(x), Math.round(y));
+function centerWindow(win: BrowserWindow, width: number, height: number): void {
+  win.setSize(width, height);
+  win.center();
 }
 
-/** The core summon: capture screenshot FIRST (F2), then show the popup (F1). */
+function expandWindow(): void {
+  if (!popup || popup.isDestroyed()) return;
+  const { workArea } = screen.getPrimaryDisplay();
+  const width = Math.min(1000, workArea.width - 100);
+  const height = Math.min(700, workArea.height - 100);
+  centerWindow(popup, width, height);
+}
+
+function hidePopup(): void {
+  if (!popup || popup.isDestroyed()) return;
+  popup.hide();
+  isPopupVisible = false;
+  popup.webContents.send("vision:status", "idle");
+}
+
+function sendVisionStatus(status: "idle" | "analyzing" | "ready" | "failed"): void {
+  popup?.webContents.send("vision:status", status);
+}
+
+/** OpenRouter vision on summon — screenshot stays in main, never sent to UI. */
+async function analyzeScreenInBackground(): Promise<void> {
+  const shot = lastScreenshot;
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+
+  if (!shot || !openrouterKey) {
+    lastScreenContext = "";
+    sendVisionStatus(shot ? "failed" : "idle");
+    return;
+  }
+
+  sendVisionStatus("analyzing");
+  try {
+    lastScreenContext = await analyzeScreen({
+      apiKey: openrouterKey,
+      screenshotDataUrl: shot,
+    });
+    sendVisionStatus("ready");
+  } catch (err) {
+    console.error("OpenRouter vision on summon failed", err);
+    lastScreenContext = "";
+    sendVisionStatus("failed");
+  }
+}
+
+function notifyPopupShown(): void {
+  if (!popup || popup.isDestroyed()) return;
+  const notify = () => {
+    popup?.webContents.send("popup:shown");
+    void analyzeScreenInBackground();
+  };
+  if (popup.webContents.isLoading()) {
+    popup.webContents.once("did-finish-load", notify);
+  } else {
+    notify();
+  }
+}
+
+/** Capture screenshot first, then show centered popup (FlickAI-style). */
 async function summon(): Promise<void> {
   lastScreenshot = await captureScreenshot();
+  lastScreenContext = "";
 
   if (!popup || popup.isDestroyed()) popup = createPopup();
   const win = popup;
 
-  positionNearCursor(win);
+  centerWindow(win, COMPACT_WIDTH, COMPACT_HEIGHT);
   win.show();
   win.focus();
+  isPopupVisible = true;
 
-  // Push the fresh screenshot and signal a new summon so the renderer can
-  // re-focus its input (autoFocus only fires on first mount, not on re-show).
-  const notify = () => {
-    win.webContents.send("screenshot:captured", lastScreenshot);
-    win.webContents.send("popup:shown");
-  };
-  if (win.webContents.isLoading()) {
-    win.webContents.once("did-finish-load", notify);
-  } else {
-    notify();
-  }
+  notifyPopupShown();
+}
+
+function registerHotkeys(): void {
+  const registered = globalShortcut.register(HOTKEY, () => void summon());
+  if (!registered) console.error("Failed to register global shortcut", HOTKEY);
+
+  globalShortcut.register("Escape", () => {
+    if (isPopupVisible) hidePopup();
+  });
 }
 
 function createTray(): void {
@@ -198,14 +252,15 @@ function registerIpc(): void {
       };
     }
 
-    let screenContext = "";
+    let screenContext = lastScreenContext;
     const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (openrouterKey) {
+    if (!screenContext && openrouterKey && shot) {
       try {
         screenContext = await analyzeScreen({
           apiKey: openrouterKey,
           screenshotDataUrl: shot,
         });
+        lastScreenContext = screenContext;
       } catch (err) {
         console.error("OpenRouter vision failed, falling back to OpenAI", err);
       }
@@ -287,7 +342,26 @@ function registerIpc(): void {
     sessionId: SESSION_ID,
   }));
 
-  ipcMain.handle("hidePopup", () => popup?.hide());
+  ipcMain.handle("hidePopup", () => hidePopup());
+
+  ipcMain.handle("expandWindow", () => {
+    expandWindow();
+  });
+
+  ipcMain.handle("recaptureScreen", async () => {
+    if (popup && !popup.isDestroyed() && popup.isVisible()) {
+      popup.hide();
+      await new Promise((r) => setTimeout(r, 350));
+    }
+    lastScreenshot = await captureScreenshot();
+    lastScreenContext = "";
+    if (popup && !popup.isDestroyed()) {
+      popup.show();
+      popup.focus();
+      isPopupVisible = true;
+    }
+    await analyzeScreenInBackground();
+  });
 }
 
 if (gotLock) {
@@ -303,11 +377,9 @@ if (gotLock) {
 
     registerIpc();
     popup = createPopup();
+    centerWindow(popup, COMPACT_WIDTH, COMPACT_HEIGHT);
     createTray();
-
-    const registered = globalShortcut.register(HOTKEY, () => void summon());
-    if (!registered)
-      console.error("Failed to register global shortcut", HOTKEY);
+    registerHotkeys();
   });
 }
 

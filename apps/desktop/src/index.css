@@ -6,11 +6,16 @@
   color-scheme: dark;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 html,
 body,
 #root {
   height: 100%;
   margin: 0;
+  background: transparent !important;
 }
 
 body {
@@ -23,19 +28,23 @@ body {
   overflow: hidden;
 }
 
-.drag {
+.drag,
+.drag-region {
   -webkit-app-region: drag;
 }
 .no-drag {
   -webkit-app-region: no-drag;
 }
 
+/* Glassmorphism — CSS-only (no native acrylic; avoids square corner bleed on Windows) */
 .glass {
-  background: rgba(10, 10, 12, 0.75);
+  background: rgba(10, 10, 12, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 @keyframes fade-in {
@@ -71,7 +80,10 @@ body {
 ::-webkit-scrollbar {
   width: 6px;
 }
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 3px;
 }

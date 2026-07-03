@@ -9,3 +9,5 @@ export interface AskResult {
   answer: string;
   usedMemory: boolean;
 }
+
+export type VisionStatus = "idle" | "analyzing" | "ready" | "failed";

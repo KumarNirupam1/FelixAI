@@ -1,12 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AskPayload, AskResult, DatasetName } from "./types";
+import type { AskPayload, AskResult, DatasetName, VisionStatus } from "./types";
 
 const api = {
-  onScreenshot: (cb: (dataUrl: string | null) => void): (() => void) => {
-    const listener = (_e: unknown, data: string | null) => cb(data);
-    ipcRenderer.on("screenshot:captured", listener);
-    return () => ipcRenderer.removeListener("screenshot:captured", listener);
-  },
   onRememberDone: (cb: (payload: { qaId?: string }) => void): (() => void) => {
     const listener = (_e: unknown, data: { qaId?: string }) => cb(data);
     ipcRenderer.on("remember:done", listener);
@@ -16,6 +11,11 @@ const api = {
     const listener = () => cb();
     ipcRenderer.on("popup:shown", listener);
     return () => ipcRenderer.removeListener("popup:shown", listener);
+  },
+  onVisionStatus: (cb: (status: VisionStatus) => void): (() => void) => {
+    const listener = (_e: unknown, status: VisionStatus) => cb(status);
+    ipcRenderer.on("vision:status", listener);
+    return () => ipcRenderer.removeListener("vision:status", listener);
   },
   ask: (payload: AskPayload): Promise<AskResult> =>
     ipcRenderer.invoke("ask", payload),
@@ -32,8 +32,10 @@ const api = {
   getStatus: (): Promise<{ cogneeUp: boolean; sessionId: string }> =>
     ipcRenderer.invoke("getStatus"),
   hide: (): Promise<void> => ipcRenderer.invoke("hidePopup"),
+  expandWindow: (): Promise<void> => ipcRenderer.invoke("expandWindow"),
+  recaptureScreen: (): Promise<void> => ipcRenderer.invoke("recaptureScreen"),
 };
 
 contextBridge.exposeInMainWorld("api", api);
 
-export type JarvisApi = typeof api;
+export type FelixApi = typeof api;

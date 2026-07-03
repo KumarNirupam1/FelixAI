@@ -11,8 +11,15 @@ export function useAsk(dataset: "main" | "private") {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // When the background remember() resolves, attach its qaId to the most
-  // recent assistant message so feedback can target that specific answer.
+  // FlickAI-style: each summon starts a fresh conversation.
+  useEffect(
+    () =>
+      window.api.onShown(() => {
+        setMessages([]);
+      }),
+    [],
+  );
+
   useEffect(
     () =>
       window.api.onRememberDone(({ qaId }) => {
@@ -33,8 +40,10 @@ export function useAsk(dataset: "main" | "private") {
 
   async function ask(question: string): Promise<void> {
     if (!question.trim() || loading) return;
+    const isFirstMessage = messages.length === 0;
     setMessages((m) => [...m, { role: "user", text: question }]);
     setLoading(true);
+    if (isFirstMessage) void window.api.expandWindow();
     try {
       const res = await window.api.ask({ question, dataset });
       setMessages((m) => [
