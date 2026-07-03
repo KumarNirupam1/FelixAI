@@ -11,6 +11,7 @@ import {
 } from "electron";
 import { join } from "node:path";
 import { existsSync } from "node:fs";
+import { writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { config as loadEnv } from "dotenv";
 import * as cognee from "@jarvis/cognee-client";
@@ -424,20 +425,18 @@ function registerIpc(): void {
     "openMemoryGraph",
     async (
       _e,
-      datasetName: DatasetName,
+      datasetId: string,
     ): Promise<{ ok: boolean; error?: string }> => {
       try {
-        const up = await cognee.health();
-        if (!up) {
-          return { ok: false, error: "Cognee is offline. Start Docker and try again." };
+        if (!datasetId || typeof datasetId !== "string") {
+          return { ok: false, error: "No dataset selected." };
         }
 
-        const datasetId = await cognee.findDatasetIdByName(datasetName);
-        if (!datasetId) {
+        const up = await cognee.health();
+        if (!up) {
           return {
             ok: false,
-            error:
-              `No "${datasetName}" dataset yet. Chat or finish onboarding first.`,
+            error: "Cognee is offline. Start Docker, then try again.",
           };
         }
 
@@ -446,8 +445,23 @@ function registerIpc(): void {
           return { ok: false, error: "Invalid graph URL." };
         }
 
-        await shell.openExternal(url);
-        return { ok: true };
+        try {
+          await shell.openExternal(url);
+          return { ok: true };
+        } catch {
+          // Fallback: save HTML locally when the OS won't open localhost URLs.
+          const html = await cognee.visualizeGraph(datasetId);
+          const filePath = join(
+            app.getPath("userData"),
+            `graph-${datasetId.slice(0, 8)}.html`,
+          );
+          await writeFile(filePath, html, "utf8");
+          const openErr = await shell.openPath(filePath);
+          if (openErr) {
+            return { ok: false, error: openErr };
+          }
+          return { ok: true };
+        }
       } catch (err) {
         return { ok: false, error: (err as Error).message };
       }

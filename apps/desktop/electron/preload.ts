@@ -28,9 +28,9 @@ const api = {
   listMemory: (): Promise<Array<Record<string, unknown>>> =>
     ipcRenderer.invoke("listMemory"),
   openMemoryGraph: (
-    dataset: DatasetName,
+    datasetId: string,
   ): Promise<{ ok: boolean; error?: string }> =>
-    ipcRenderer.invoke("openMemoryGraph", dataset),
+    ipcRenderer.invoke("openMemoryGraph", datasetId),
   forgetPrivate: (): Promise<{ ok: boolean; error?: string }> =>
     ipcRenderer.invoke("forgetPrivate"),
   getStatus: (): Promise<{

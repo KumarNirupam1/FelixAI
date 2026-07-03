@@ -4,19 +4,21 @@ interface Props {
   active: boolean;
 }
 
-type GraphDataset = "main" | "private";
-
 function labelForItem(item: Record<string, unknown>): string {
   if (typeof item.name === "string" && item.name) return item.name;
   if (typeof item.id === "string" && item.id) return item.id.slice(0, 8) + "…";
   return "dataset";
 }
 
+function idForItem(item: Record<string, unknown>): string | null {
+  const id = item.id ?? item.dataset_id;
+  return typeof id === "string" && id ? id : null;
+}
+
 export function MemoryView({ active }: Props) {
   const [items, setItems] = useState<Array<Record<string, unknown>>>([]);
   const [loading, setLoading] = useState(true);
-  const [graphDataset, setGraphDataset] = useState<GraphDataset>("main");
-  const [openingGraph, setOpeningGraph] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
   const [graphError, setGraphError] = useState<string | null>(null);
 
   function refresh(): void {
@@ -37,16 +39,24 @@ export function MemoryView({ active }: Props) {
     refresh();
   }
 
-  async function openGraph(): Promise<void> {
-    setOpeningGraph(true);
+  async function openGraph(datasetId: string): Promise<void> {
+    if (typeof window.api.openMemoryGraph !== "function") {
+      setGraphError(
+        "App needs a restart — stop pnpm dev (Ctrl+C) and run it again.",
+      );
+      return;
+    }
+
+    setOpeningId(datasetId);
     setGraphError(null);
     try {
-      const res = await window.api.openMemoryGraph(graphDataset);
+      const res = await window.api.openMemoryGraph(datasetId);
       if (!res.ok) setGraphError(res.error ?? "Could not open graph");
-    } catch {
-      setGraphError("Could not open graph");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Could not open graph";
+      setGraphError(msg);
     } finally {
-      setOpeningGraph(false);
+      setOpeningId(null);
     }
   }
 
@@ -70,6 +80,12 @@ export function MemoryView({ active }: Props) {
         <span className="text-white/45">forget private</span> in chat.
       </p>
 
+      {graphError && (
+        <p className="rounded-lg border border-red-500/20 bg-red-500/10 px-2.5 py-2 text-[10px] leading-relaxed text-red-200/90">
+          {graphError}
+        </p>
+      )}
+
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
         {loading && (
           <p className="text-xs font-light text-white/40">Loading…</p>
@@ -79,67 +95,51 @@ export function MemoryView({ active }: Props) {
             No datasets yet. Chat and onboarding will populate memory.
           </p>
         )}
-        {items.map((it, i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-white/8 bg-white/5 px-3 py-2.5"
-          >
-            <p className="text-xs font-medium text-white/75">
-              {labelForItem(it)}
-            </p>
-            {typeof it.id === "string" && (
-              <p className="mt-0.5 font-mono text-[9px] text-white/25">
-                {it.id}
-              </p>
-            )}
-            {typeof it.description === "string" && it.description && (
-              <p className="mt-1 text-[10px] text-white/40">
-                {it.description}
-              </p>
-            )}
-          </div>
-        ))}
+        {items.map((it, i) => {
+          const datasetId = idForItem(it);
+          const isOpening = datasetId !== null && openingId === datasetId;
+
+          return (
+            <div
+              key={datasetId ?? i}
+              className="rounded-xl border border-white/8 bg-white/5 px-3 py-2.5"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-white/75">
+                    {labelForItem(it)}
+                  </p>
+                  {datasetId && (
+                    <p className="mt-0.5 font-mono text-[9px] text-white/25">
+                      {datasetId}
+                    </p>
+                  )}
+                  {typeof it.description === "string" && it.description && (
+                    <p className="mt-1 text-[10px] text-white/40">
+                      {it.description}
+                    </p>
+                  )}
+                </div>
+                {datasetId && (
+                  <button
+                    type="button"
+                    disabled={isOpening}
+                    onClick={() => void openGraph(datasetId)}
+                    className="shrink-0 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-white/75 transition hover:bg-white/10 disabled:opacity-50"
+                  >
+                    {isOpening ? "Opening…" : "Graph ↗"}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      <div className="shrink-0 space-y-2 border-t border-white/8 pt-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex gap-1">
-            {(
-              [
-                ["main", "Main"],
-                ["private", "Private"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setGraphDataset(id)}
-                className={`rounded-lg px-2.5 py-1 text-xs transition ${
-                  graphDataset === id
-                    ? "bg-white/10 text-white"
-                    : "text-white/45 hover:text-white/75"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <button
-            type="button"
-            disabled={openingGraph}
-            onClick={() => void openGraph()}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/80 transition hover:bg-white/10 disabled:opacity-50"
-          >
-            {openingGraph ? "Opening…" : "Open graph ↗"}
-          </button>
-        </div>
-        {graphError && (
-          <p className="text-[10px] text-red-300/80">{graphError}</p>
-        )}
-        <p className="text-[9px] text-white/25">
-          Opens Cognee&apos;s graph in your browser — full screen, zoom, and pan.
-        </p>
-      </div>
+      <p className="shrink-0 text-[9px] text-white/25">
+        Graph opens in your browser — full screen, zoom, and pan. Cognee must
+        be running.
+      </p>
     </div>
   );
 }

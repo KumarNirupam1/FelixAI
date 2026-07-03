@@ -25,7 +25,7 @@ interface FelixApi {
   ) => Promise<{ ok: boolean; error?: string }>;
   listMemory: () => Promise<Array<Record<string, unknown>>>;
   openMemoryGraph: (
-    dataset: "main" | "private",
+    datasetId: string,
   ) => Promise<{ ok: boolean; error?: string }>;
   forgetPrivate: () => Promise<{ ok: boolean; error?: string }>;
   getStatus: () => Promise<{
