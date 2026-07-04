@@ -3,18 +3,21 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Header } from "./header";
+import { HeroBackground } from "./hero-background";
 import { Brain } from "lucide-react";
 
 export function HeroSection() {
   return (
-    <section className="relative mx-auto flex w-full max-w-6xl flex-col items-center overflow-hidden px-5 pb-16 pt-24 text-center md:pb-20 md:pt-28">
+    <section className="relative flex h-[640px] w-full flex-col items-center overflow-hidden px-4 text-center md:h-[820px] md:px-5 lg:h-[900px]">
+      <HeroBackground />
+
       <div className="absolute inset-x-0 top-0 z-20">
         <Header />
       </div>
 
-      <div className="relative z-10 flex max-w-3xl flex-col items-center gap-5 md:gap-6">
+      <div className="relative z-10 mt-20 flex max-w-3xl flex-col items-center gap-4 px-2 md:mt-28 md:gap-5 lg:mt-36">
         <p className="text-[10px] font-medium uppercase tracking-[0.24em] text-primary/75 md:text-xs">
-          WeMakeDevs × Cognee · Open Source
+          WeMakeDevs × Cognee
         </p>
 
         <h1 className="text-5xl font-semibold leading-[1.05] tracking-tight md:text-7xl lg:text-8xl">
@@ -29,10 +32,10 @@ export function HeroSection() {
 
         <p className="max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
           One hotkey pulls up what&apos;s on your screen. A self-hosted Cognee
-          knowledge graph remembers it — today, last week, whenever you ask again.
+          knowledge graph remembers it today, last week, whenever you ask again.
         </p>
 
-        <div className="mt-2 flex flex-col items-center gap-4 sm:flex-row">
+        <div className="mt-1 flex flex-col items-center gap-4 sm:flex-row">
           <Link
             href="#get-started"
             onClick={(e) => {
@@ -55,7 +58,7 @@ export function HeroSection() {
           </button>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground md:text-xs">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-muted-foreground md:text-xs">
           <span className="flex items-center gap-1.5">
             <Brain className="h-3.5 w-3.5 text-primary/70" />
             Cognee graph memory

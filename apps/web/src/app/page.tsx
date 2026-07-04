@@ -14,14 +14,14 @@ export default function LandingPage() {
       <div className="relative z-10">
         <main className="relative w-full">
           <HeroSection />
-          <div className="relative mx-auto -mt-6 max-w-6xl px-5 md:-mt-12">
+          <div className="absolute bottom-[-72px] left-1/2 z-30 -translate-x-1/2 md:bottom-[-200px]">
             <AnimatedSection>
               <DashboardPreview />
             </AnimatedSection>
           </div>
         </main>
 
-        <AnimatedSection className="mx-auto mt-16 w-full md:mt-24" delay={0.1}>
+        <AnimatedSection className="mx-auto mt-[360px] w-full md:mt-[340px]" delay={0.1}>
           <SocialProof />
         </AnimatedSection>
 
