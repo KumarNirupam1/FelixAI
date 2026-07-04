@@ -33,7 +33,13 @@ if (!electronDir) {
 }
 
 const exe = path.join(electronDir, "dist", "electron.exe");
+const pathTxt = path.join(electronDir, "path.txt");
+
 if (fs.existsSync(exe)) {
+  if (!fs.existsSync(pathTxt)) {
+    fs.writeFileSync(pathTxt, "electron.exe", "utf8");
+    console.log("[postinstall-electron] wrote path.txt");
+  }
   console.log("[postinstall-electron] electron.exe OK");
   process.exit(0);
 }
@@ -57,9 +63,19 @@ try {
 
 if (!fs.existsSync(exe)) {
   console.error(
-    "[postinstall-electron] Still no electron.exe after install.js. See README setup.",
+    "[postinstall-electron] Still no electron.exe after install.js. Manual fix:\n" +
+      "  curl -L -o %TEMP%\\electron.zip https://github.com/electron/electron/releases/download/v33.4.11/electron-v33.4.11-win32-x64.zip\n" +
+      "  Expand-Archive %TEMP%\\electron.zip -DestinationPath " +
+      path.join(electronDir, "dist") +
+      " -Force\n" +
+      "  echo electron.exe> " +
+      pathTxt,
   );
   process.exit(1);
+}
+
+if (!fs.existsSync(pathTxt)) {
+  fs.writeFileSync(pathTxt, "electron.exe", "utf8");
 }
 
 console.log("[postinstall-electron] electron.exe installed");

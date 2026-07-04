@@ -8,7 +8,23 @@ export default defineConfig(({ mode }) => {
 
   return {
     main: {
-      plugins: [externalizeDepsPlugin()],
+      resolve: {
+        alias: {
+          "@felixai/cognee-client": resolve(
+            __dirname,
+            "../../packages/cognee-client/src/index.ts",
+          ),
+          "@felixai/api-client": resolve(
+            __dirname,
+            "../../packages/api-client/src/index.ts",
+          ),
+        },
+      },
+      plugins: [
+        externalizeDepsPlugin({
+          exclude: ["@felixai/cognee-client", "@felixai/api-client", "dotenv"],
+        }),
+      ],
       build: {
         rollupOptions: {
           input: { index: resolve(__dirname, "electron/main.ts") },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Toggle } from "@jarvis/ui";
+import { Toggle } from "@felixai/ui";
 import { useAsk } from "../hooks/useAsk";
 import { useVisionStatus } from "../hooks/useVisionStatus";
 import { useVoiceInput } from "../hooks/useVoiceInput";

@@ -1,4 +1,4 @@
-# Jarvis — Personal AI Companion
+# FelixAI — Personal AI Companion
 
 A desktop companion that lives in your system tray. Press a global hotkey, it takes
 a real screenshot of whatever you're looking at, answers your question about it with a
@@ -51,7 +51,30 @@ pnpm dev              # desktop app
 pnpm dev:web          # landing page at http://localhost:3000
 ```
 
-Press `Ctrl+Shift+Space` anywhere to summon Jarvis.
+Press `Ctrl+Shift+Space` anywhere to summon FelixAI.
+
+## Package for Windows (installer)
+
+Builds a `.exe` installer under `apps/desktop/release/`:
+
+```bash
+pnpm icon
+pnpm package:win
+```
+
+On first launch, FelixAI copies `.env.example` to your app data folder. Edit that file with your API keys and restart:
+
+- Windows: `%APPDATA%/FelixAI/.env`
+
+Prerequisites for the packaged app are the same: **Cognee must be running in Docker** on the machine.
+
+## Demo checklist (hackathon)
+
+1. Finish onboarding on first hotkey
+2. Ask about screen → answer from Cognee + vision
+3. `remember this: …` in chat → Memory tab shows dataset
+4. Quit app → relaunch → ask about prior session (cross-session memory)
+5. Memory tab → Graph ↗ opens Cognee visualize in browser
 
 ## Privacy
 

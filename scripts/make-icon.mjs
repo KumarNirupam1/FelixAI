@@ -1,19 +1,23 @@
-// Generates a valid 32x32 PNG tray/app icon (accent-colored disc on transparent).
-// Writes apps/desktop/build/icon.png and prints its base64 to stdout.
+// Generates tray/app icon (gold #DDB631 disc on transparent).
 import { deflateSync } from "node:zlib";
 import { writeFileSync, mkdirSync } from "node:fs";
 
-const W = 32, H = 32;
-const accent = [0xc8, 0xc8, 0xd2];
+const W = 256,
+  H = 256;
+const accent = [0xdd, 0xb6, 0x31]; // #DDB631
 
 const stride = 1 + W * 4;
 const raw = Buffer.alloc(H * stride);
-const cx = (W - 1) / 2, cy = (H - 1) / 2, r = W / 2 - 2;
+const cx = (W - 1) / 2,
+  cy = (H - 1) / 2,
+  r = W / 2 - 8;
 for (let y = 0; y < H; y++) {
-  raw[y * stride] = 0; // filter type: none
+  raw[y * stride] = 0;
   for (let x = 0; x < W; x++) {
     const dist = Math.hypot(x - cx, y - cy);
-    const a = dist <= r ? 255 : dist <= r + 1 ? 128 : 0;
+    const edge = r + 3;
+    const a =
+      dist <= r ? 255 : dist <= edge ? Math.round(255 * (1 - (dist - r) / 3)) : 0;
     const o = y * stride + 1 + x * 4;
     raw[o] = accent[0];
     raw[o + 1] = accent[1];
@@ -43,8 +47,8 @@ const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 const ihdr = Buffer.alloc(13);
 ihdr.writeUInt32BE(W, 0);
 ihdr.writeUInt32BE(H, 4);
-ihdr[8] = 8;  // bit depth
-ihdr[9] = 6;  // color type: RGBA
+ihdr[8] = 8;
+ihdr[9] = 6;
 const idat = deflateSync(raw);
 const png = Buffer.concat([
   sig,
@@ -55,4 +59,4 @@ const png = Buffer.concat([
 
 mkdirSync("apps/desktop/build", { recursive: true });
 writeFileSync("apps/desktop/build/icon.png", png);
-process.stdout.write(png.toString("base64"));
+console.log("Wrote apps/desktop/build/icon.png (#DDB631)");

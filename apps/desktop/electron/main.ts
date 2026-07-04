@@ -10,12 +10,12 @@ import {
   shell,
 } from "electron";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
+import { copyFileSync, existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { config as loadEnv } from "dotenv";
-import * as cognee from "@jarvis/cognee-client";
-import { analyzeScreen } from "@jarvis/api-client";
+import * as cognee from "@felixai/cognee-client";
+import { analyzeScreen } from "@felixai/api-client";
 import { captureScreenshot } from "./services/screenshot";
 import { ensureCogneeRunning } from "./services/docker";
 import {
@@ -27,19 +27,40 @@ import { parseUserCommand } from "./services/commands";
 import { FELIX_RECALL_PROMPT } from "./prompts";
 import type { AskPayload, AskResult, DatasetName } from "./types";
 
-// Resolve apps/desktop/.env regardless of where the dev server was launched.
-// app.getAppPath() points at apps/desktop; __dirname is out/main at runtime.
-for (const envPath of [
-  join(app.getAppPath(), ".env"),
-  join(__dirname, "../../.env"),
-  join(process.cwd(), "apps/desktop/.env"),
-  join(process.cwd(), ".env"),
-]) {
-  if (existsSync(envPath)) {
-    loadEnv({ path: envPath });
-    if (process.env.COGNEE_URL || process.env.OPENROUTER_API_KEY) break;
+// Stable userData path in dev and packaged builds (%APPDATA%/FelixAI on Windows).
+app.setName("FelixAI");
+
+// Resolve .env — dev (apps/desktop/.env) or packaged (%APPDATA%/FelixAI/.env).
+function loadFelixEnv(): void {
+  const candidates = [
+    join(app.getPath("userData"), ".env"),
+    join(process.resourcesPath, ".env"),
+    join(app.getAppPath(), ".env"),
+    join(__dirname, "../../.env"),
+    join(process.cwd(), "apps/desktop/.env"),
+    join(process.cwd(), ".env"),
+  ];
+
+  for (const envPath of candidates) {
+    if (existsSync(envPath)) {
+      loadEnv({ path: envPath });
+      if (process.env.COGNEE_URL || process.env.OPENROUTER_API_KEY) break;
+    }
   }
 }
+
+function ensureUserEnvTemplate(): void {
+  const userEnv = join(app.getPath("userData"), ".env");
+  if (existsSync(userEnv)) return;
+
+  const template = join(process.resourcesPath, ".env.example");
+  if (existsSync(template)) {
+    copyFileSync(template, userEnv);
+    console.info("[felix] Created", userEnv, "— add your API keys and restart.");
+  }
+}
+
+loadFelixEnv();
 
 if (!process.env.OPENROUTER_API_KEY) {
   console.warn("[felix] OPENROUTER_API_KEY not found in apps/desktop/.env");
@@ -50,6 +71,11 @@ const COMPACT_WIDTH = 700;
 const COMPACT_HEIGHT = 440;
 const SESSION_ID = randomUUID();
 const IMPROVE_EVERY_N = 5;
+
+function openRouterVisionModel(): string | undefined {
+  const model = process.env.OPENROUTER_VISION_MODEL?.trim();
+  return model || undefined;
+}
 
 let interactionCount = 0;
 const datasetsTouched = new Set<DatasetName>(["main"]);
@@ -150,6 +176,7 @@ async function analyzeScreenInBackground(): Promise<void> {
     lastScreenContext = await analyzeScreen({
       apiKey: openrouterKey,
       screenshotDataUrl: shot,
+      model: openRouterVisionModel(),
     });
     sendVisionStatus("ready");
   } catch (err) {
@@ -323,6 +350,7 @@ function registerIpc(): void {
         screenContext = await analyzeScreen({
           apiKey: openrouterKey,
           screenshotDataUrl: shot,
+          model: openRouterVisionModel(),
         });
         lastScreenContext = screenContext;
       } catch (err) {
@@ -483,6 +511,8 @@ function registerIpc(): void {
     onboardingComplete: isOnboardingComplete(),
   }));
 
+  ipcMain.handle("getDeepgramKey", () => process.env.DEEPGRAM_API_KEY ?? "");
+
   ipcMain.handle("hidePopup", () => hidePopup());
 
   ipcMain.handle("expandWindow", () => {
@@ -513,6 +543,9 @@ if (gotLock) {
     if (process.platform === "win32") {
       app.setAppUserModelId("com.felixai.companion");
     }
+
+    ensureUserEnvTemplate();
+    loadFelixEnv();
 
     void ensureCogneeRunning(process.env.COGNEE_REPO_PATH);
 

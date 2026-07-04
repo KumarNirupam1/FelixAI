@@ -1,18 +1,21 @@
 {
-  "name": "@jarvis/desktop",
+  "name": "@felixai/desktop",
   "version": "0.1.0",
-  "description": "Jarvis — personal AI companion with self-hosted Cognee memory",
+  "description": "FelixAI — personal AI companion with self-hosted Cognee memory",
+  "author": "FelixAI",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package": "electron-vite build && electron-builder",
+    "package:win": "electron-vite build && electron-builder --win"
   },
   "dependencies": {
-    "@jarvis/api-client": "workspace:*",
-    "@jarvis/cognee-client": "workspace:*",
-    "@jarvis/ui": "workspace:*",
+    "@felixai/api-client": "workspace:*",
+    "@felixai/cognee-client": "workspace:*",
+    "@felixai/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -25,10 +28,45 @@
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
     "electron-vite": "^2.3.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3",
     "vite": "^5.4.11"
+  },
+  "build": {
+    "appId": "com.felixai.companion",
+    "productName": "FelixAI",
+    "copyright": "Copyright © 2026 FelixAI",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": ".env.example",
+        "to": ".env.example"
+      }
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "FelixAI"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg"],
+      "icon": "build/icon.png"
+    }
   }
 }

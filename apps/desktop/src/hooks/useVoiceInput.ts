@@ -33,10 +33,12 @@ export function useVoiceInput(options: Options = {}) {
   }, []);
 
   const startRecording = useCallback(async () => {
-    const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
+    const apiKey =
+      (await window.api.getDeepgramKey?.()) ||
+      import.meta.env.VITE_DEEPGRAM_API_KEY;
 
     if (!apiKey) {
-      setError("Add DEEPGRAM_API_KEY to apps/desktop/.env");
+      setError("Add DEEPGRAM_API_KEY to your .env file");
       return;
     }
 

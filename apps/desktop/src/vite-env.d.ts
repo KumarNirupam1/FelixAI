@@ -33,6 +33,7 @@ interface FelixApi {
     sessionId: string;
     onboardingComplete: boolean;
   }>;
+  getDeepgramKey: () => Promise<string>;
   getOnboardingState: () => Promise<{
     complete: boolean;
     questions: string[];

@@ -38,6 +38,7 @@ const api = {
     sessionId: string;
     onboardingComplete: boolean;
   }> => ipcRenderer.invoke("getStatus"),
+  getDeepgramKey: (): Promise<string> => ipcRenderer.invoke("getDeepgramKey"),
   getOnboardingState: (): Promise<{
     complete: boolean;
     questions: string[];

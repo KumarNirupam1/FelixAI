@@ -1,14 +1,15 @@
 {
-  "name": "jarvis",
+  "name": "felixai",
   "private": true,
   "version": "0.1.0",
   "packageManager": "pnpm@10.16.1",
   "scripts": {
-    "dev": "turbo run dev --filter=@jarvis/desktop",
-    "dev:web": "turbo run dev --filter=@jarvis/web",
+    "dev": "turbo run dev --filter=@felixai/desktop",
+    "dev:web": "turbo run dev --filter=@felixai/web",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "icon": "node scripts/make-icon.mjs",
+    "package:win": "pnpm icon && turbo run build --filter=@felixai/cognee-client --filter=@felixai/api-client && pnpm --filter @felixai/desktop package:win",
     "postinstall": "node scripts/postinstall-electron.cjs"
   },
   "devDependencies": {
