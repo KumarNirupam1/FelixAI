@@ -16,17 +16,17 @@ export const ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   },
   {
     id: "role",
-    question: "What do you work on or study?",
+    question: "What are you usually working on?",
     rememberContext: "User profile — role and focus area",
   },
   {
     id: "help",
-    question: "What do you usually need help with on your screen?",
-    rememberContext: "User preferences — typical screen tasks",
+    question: "What kind of things do you want help with most?",
+    rememberContext: "User preferences — typical needs",
   },
   {
     id: "style",
-    question: "How do you like answers — brief, detailed, or casual?",
+    question: "How do you like your answers — quick and to the point, or more detailed and thorough?",
     rememberContext: "User preferences — answer style",
   },
 ];
