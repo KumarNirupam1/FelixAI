@@ -48,15 +48,10 @@ function FAQItem({
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    onToggle();
-  };
-
   return (
     <div
-      className="w-full cursor-pointer overflow-hidden rounded-[10px] bg-primary/[0.06] shadow-[0px_2px_4px_rgba(0,0,0,0.16)] outline outline-1 outline-border"
-      onClick={handleClick}
+      className="glass-panel w-full cursor-pointer overflow-hidden rounded-xl transition-colors hover:border-white/[0.14]"
+      onClick={onToggle}
     >
       <div className="flex w-full items-center justify-between gap-5 px-5 py-[18px] pr-4 text-left">
         <p className="flex-1 text-base font-medium leading-6 text-foreground">
@@ -94,17 +89,12 @@ export function FAQSection() {
   }
 
   return (
-    <section className="relative flex w-full flex-col items-center px-5 pb-20 pt-16 md:pb-40">
-      <div className="pointer-events-none absolute left-1/2 top-[150px] h-[500px] w-[300px] -translate-x-1/2 rotate-[-33deg] rounded-full bg-primary/10 blur-[100px]" />
-      <div className="relative z-10 mb-10 flex flex-col items-center gap-3 text-center">
-        <h2 className="max-w-md text-4xl font-semibold leading-10 text-foreground">
-          Frequently Asked Questions
-        </h2>
-        <p className="max-w-lg text-sm font-medium text-muted-foreground">
-          Everything you need to know about FelixAI and Cognee
-        </p>
+    <section className="relative mx-auto w-full max-w-xl px-5 pb-20 pt-8">
+      <div className="mb-10 text-center">
+        <h2 className="text-2xl font-semibold text-foreground md:text-3xl">FAQ</h2>
+        <p className="mt-2 text-sm text-muted-foreground">FelixAI & Cognee</p>
       </div>
-      <div className="relative z-10 flex w-full max-w-[600px] flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {FAQ_DATA.map((faq, index) => (
           <FAQItem
             key={faq.question}

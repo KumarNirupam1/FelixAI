@@ -16,23 +16,12 @@ function BentoCard({
   Component: ComponentType;
 }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-white/20">
-      <div
-        className="absolute inset-0 rounded-2xl"
-        style={{
-          background: "hsl(var(--primary) / 0.06)",
-          backdropFilter: "blur(4px)",
-        }}
-      />
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/8 to-transparent" />
-      <div className="relative z-10 flex flex-col gap-1.5 p-6">
-        <p className="text-lg leading-7 text-foreground">
-          {title}
-          <br />
-          <span className="text-muted-foreground">{description}</span>
-        </p>
+    <div className="glass-panel group relative flex flex-col overflow-hidden rounded-2xl transition-colors hover:border-white/[0.15]">
+      <div className="relative z-10 flex flex-col gap-2 p-6">
+        <h3 className="text-base font-semibold text-foreground">{title}</h3>
+        <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
       </div>
-      <div className="relative z-10 h-72">
+      <div className="relative z-10 h-56 border-t border-white/[0.04]">
         <Component />
       </div>
     </div>
@@ -41,64 +30,57 @@ function BentoCard({
 
 const CARDS = [
   {
-    title: "Screen-aware help",
-    description:
-      "OpenRouter vision describes what's on screen before Cognee answers.",
+    title: "Screen-aware answers",
+    description: "Vision describes your screen before Cognee answers.",
     Component: ScreenContextIllustration,
   },
   {
-    title: "Cognee memory graph",
-    description:
-      "Every Q&A is stored and connected — recall uses GRAPH_COMPLETION.",
+    title: "Knowledge graph memory",
+    description: "Every exchange stored and connected in Cognee.",
     Component: MemoryGraphIllustration,
   },
   {
     title: "Cross-session recall",
-    description:
-      "Ask about last week. FelixAI pulls context from your local graph.",
+    description: "Ask about last week — Felix pulls from your local graph.",
     Component: CrossSessionIllustration,
   },
   {
     title: "Voice input",
-    description: "Speak your question — Deepgram nova-2 built into the popup.",
+    description: "Speak your question with Deepgram built in.",
     Component: VoiceModeIllustration,
   },
   {
     title: "Private dataset",
-    description:
-      "Sensitive chats stay separate. Forget private with one command.",
+    description: "Sensitive chats isolated. Forget private in one command.",
     Component: PrivateVaultIllustration,
   },
   {
     title: "Fully self-hosted",
-    description:
-      "Cognee runs in Docker on your machine. No cloud memory lock-in.",
+    description: "Cognee in Docker on your machine. No cloud lock-in.",
     Component: SelfHostedIllustration,
   },
 ];
 
 export function BentoSection() {
   return (
-    <section className="flex w-full flex-col items-center justify-center overflow-visible bg-transparent px-5">
-      <div className="relative flex w-full max-w-6xl flex-col justify-start gap-6 py-8 md:py-16">
-        <div className="pointer-events-none absolute left-20 top-[500px] h-[500px] w-[400px] rotate-[-33deg] rounded-full bg-primary/10 blur-[130px]" />
-        <div className="relative z-10 flex flex-col items-center justify-center gap-4 py-8 md:py-14">
-          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-            Features
-          </p>
-          <h2 className="max-w-[655px] text-center text-4xl font-semibold leading-tight text-foreground md:text-6xl md:leading-[66px]">
-            Your screen. Cognee&apos;s brain.
-          </h2>
-          <p className="max-w-[600px] text-center text-lg font-medium leading-relaxed text-muted-foreground md:text-xl">
-            FelixAI combines live screen context with a persistent knowledge
-            graph — open source, local, and built for the Cognee hackathon.
-          </p>
-        </div>
-        <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {CARDS.map((card) => (
-            <BentoCard key={card.title} {...card} />
-          ))}
-        </div>
+    <section className="mx-auto w-full max-w-6xl px-5">
+      <div className="mb-12 text-center md:mb-16">
+        <p className="mb-2 text-xs font-medium uppercase tracking-widest text-white/40">
+          Features
+        </p>
+        <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+          Your screen. Cognee&apos;s brain.
+        </h2>
+        <p className="mx-auto mt-3 max-w-lg text-sm text-muted-foreground md:text-base">
+          Open source desktop companion for the Cognee hackathon — memory that
+          actually persists.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {CARDS.map((card) => (
+          <BentoCard key={card.title} {...card} />
+        ))}
       </div>
     </section>
   );

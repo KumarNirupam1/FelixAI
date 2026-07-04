@@ -4,37 +4,37 @@
 
 @layer base {
   :root {
-    --background: 35 14% 5%;
-    --foreground: 45 18% 93%;
+    --background: 220 40% 4%;
+    --foreground: 210 25% 96%;
 
-    --muted: 35 8% 14%;
-    --muted-foreground: 45 12% 93% / 0.65;
-    --muted-foreground-light: 45 12% 93% / 0.45;
-    --muted-foreground-dark: 45 12% 93% / 0.55;
+    --muted: 215 35% 12%;
+    --muted-foreground: 210 18% 72%;
+    --muted-foreground-light: 210 15% 55%;
+    --muted-foreground-dark: 210 18% 65%;
 
-    --card: 35 10% 8%;
-    --card-foreground: 45 18% 93%;
+    --card: 215 40% 8%;
+    --card-foreground: 210 25% 96%;
 
-    --popover: 35 14% 5%;
-    --popover-foreground: 45 18% 93%;
+    --popover: 220 40% 4%;
+    --popover-foreground: 210 25% 96%;
 
-    /* FelixAI gold */
-    --primary: 46 72% 53%;
-    --primary-foreground: 35 20% 8%;
-    --primary-dark: 46 85% 38%;
-    --primary-light: 46 55% 78%;
+    /* Subtle ocean accent — no gold */
+    --primary: 195 38% 62%;
+    --primary-foreground: 220 40% 6%;
+    --primary-dark: 200 42% 48%;
+    --primary-light: 195 30% 78%;
 
-    --secondary: 45 18% 93%;
-    --secondary-foreground: 35 20% 8%;
+    --secondary: 210 20% 92%;
+    --secondary-foreground: 220 40% 8%;
 
-    --accent: 35 10% 18%;
-    --accent-foreground: 45 18% 96%;
+    --accent: 200 30% 18%;
+    --accent-foreground: 210 25% 96%;
 
-    --border: 46 40% 50% / 0.12;
-    --border-light: 46 30% 50% / 0.08;
-    --ring: 46 72% 53%;
+    --border: 200 30% 100% / 0.1;
+    --border-light: 200 20% 100% / 0.06;
+    --ring: 195 38% 62%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -43,6 +43,15 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-black text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply border border-white/10 bg-white/[0.04] backdrop-blur-md;
+  }
+  .glass-panel-strong {
+    @apply border border-white/[0.12] bg-white/[0.06] backdrop-blur-xl;
   }
 }

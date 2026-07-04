@@ -1,25 +1,16 @@
-const TECH = [
-  "Cognee",
-  "Electron",
-  "OpenRouter",
-  "Deepgram",
-  "Next.js",
-  "TypeScript",
-  "Docker",
-  "Graph Memory",
-];
+const TECH = ["Cognee", "Electron", "OpenRouter", "Deepgram", "Docker", "TypeScript"];
 
 export function SocialProof() {
   return (
     <section className="flex flex-col items-center justify-center gap-6 overflow-hidden py-16">
-      <p className="text-center text-2xl font-medium text-muted-foreground md:text-3xl">
-        Powered by open source
+      <p className="text-center text-3xl font-medium leading-tight text-gray-300">
+        Built with
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-6 px-4 md:gap-10">
+      <div className="flex flex-wrap items-center justify-center gap-8 px-4 md:gap-12">
         {TECH.map((tech) => (
           <span
             key={tech}
-            className="cursor-default text-lg font-bold text-muted-foreground opacity-60 transition hover:text-primary hover:opacity-100 md:text-xl"
+            className="cursor-default text-xl font-bold text-gray-400 opacity-70 transition-opacity hover:opacity-100 md:text-2xl"
           >
             {tech}
           </span>
