@@ -1,44 +1,59 @@
+import { askTextFallback } from "@felixai/api-client";
+
 /** Combine screen description + user question for Cognee GRAPH_COMPLETION. */
 export function buildRecallQuery(question: string, screenContext?: string): string {
   const q = question.trim();
   const screen = screenContext?.trim();
 
   if (!q) return screen ?? "";
-
-  if (!screen) {
-    return q;
-  }
+  if (!screen) return q;
 
   return (
-    "The user is asking about what is on their screen.\n\n" +
+    "The user is looking at their screen and asking a question. Answer completely — " +
+    "address every part of what they're asking, not just the most obvious part.\n\n" +
     `Screen description:\n${screen}\n\n` +
-    `User question: ${q}`
+    `User question: ${q}\n\n` +
+    "If the question has multiple parts, answer all parts."
   );
 }
 
 /** Shown when Cognee recall fails or returns nothing useful. */
-export function buildFallbackAnswer(
+export async function buildFallbackAnswer(
   screenContext: string,
+  question: string,
   cogneeUp: boolean,
-): string {
+  openRouterKey: string,
+): Promise<string> {
   if (!cogneeUp) {
     return (
-      "Cognee memory is offline. Start your self-hosted Cognee Docker instance " +
-      "and try again."
+      "Memory is offline — start Cognee's Docker container to enable full answers."
     );
   }
 
-  const screen = screenContext.trim();
-  if (screen) {
-    return (
-      "I couldn't reach memory for a full answer right now. " +
-      "Here's what I see on your screen:\n\n" +
-      screen
-    );
+  const key = openRouterKey.trim();
+  if (!key) {
+    const screen = screenContext.trim();
+    if (screen) {
+      return (
+        "I couldn't reach memory for a full answer right now. " +
+        "Here's what I see on your screen:\n\n" +
+        screen
+      );
+    }
+    return "I couldn't generate an answer. Add OPENROUTER_API_KEY to enable fallback answers.";
   }
 
-  return (
-    "I couldn't generate an answer from memory. " +
-    "Make sure Cognee is running and try again."
-  );
+  try {
+    return await askTextFallback(key, question, screenContext);
+  } catch {
+    const screen = screenContext.trim();
+    if (screen) {
+      return (
+        "I couldn't reach memory for a full answer right now. " +
+        "Here's what I see on your screen:\n\n" +
+        screen
+      );
+    }
+    return "I couldn't generate an answer from memory. Make sure Cognee is running and try again.";
+  }
 }

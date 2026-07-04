@@ -49,10 +49,57 @@ async function callOpenRouter(
           ],
         },
       ],
-      max_tokens: 600,
+      max_tokens: 900,
       temperature: 0.3,
     }),
   });
+}
+
+const FALLBACK_TEXT_MODEL = "google/gemma-4-26b-a4b-it:free";
+
+/** Text-only fallback when Cognee recall returns nothing — answers from screen context. */
+export async function askTextFallback(
+  apiKey: string,
+  question: string,
+  screenContext: string,
+): Promise<string> {
+  const res = await fetch(OPENROUTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://felixai.app",
+      "X-Title": "FelixAI",
+    },
+    body: JSON.stringify({
+      model: FALLBACK_TEXT_MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are FelixAI. Answer the user's question fully and directly using the " +
+            "screen description below. No memory is available yet for this query — just " +
+            "answer from what's on screen. Keep it concise but never omit relevant content.",
+        },
+        {
+          role: "user",
+          content: `Screen description:\n${screenContext}\n\nQuestion: ${question}`,
+        },
+      ],
+      max_tokens: 500,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`OpenRouter fallback error ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+  };
+  return (
+    data.choices?.[0]?.message?.content?.trim() ??
+    "I couldn't generate an answer right now."
+  );
 }
 
 /** OpenRouter vision — turns a screenshot into text context for Cognee recall. */

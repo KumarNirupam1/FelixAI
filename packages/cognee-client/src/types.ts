@@ -39,6 +39,7 @@ export interface QAInput {
   question: string;
   answer: string;
   context?: string;
+  usedMemory?: boolean;
 }
 
 export interface MemoryItem {

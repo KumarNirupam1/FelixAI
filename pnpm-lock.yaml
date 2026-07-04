@@ -135,6 +135,10 @@ importers:
         version: 5.9.3
 
   packages/cognee-client:
+    dependencies:
+      '@felixai/api-client':
+        specifier: workspace:*
+        version: link:../api-client
     devDependencies:
       '@types/node':
         specifier: ^22.10.0

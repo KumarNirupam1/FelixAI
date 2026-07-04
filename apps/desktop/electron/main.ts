@@ -95,7 +95,23 @@ let tray: Tray | null = null;
 let popup: BrowserWindow | null = null;
 let lastScreenshot: string | null = null;
 let lastScreenContext = "";
+let visionPromise: Promise<string> | null = null;
 let isPopupVisible = false;
+
+const recentExchanges: { question: string; answer: string }[] = [];
+
+function pushRecent(question: string, answer: string): void {
+  recentExchanges.push({ question, answer });
+  if (recentExchanges.length > 5) recentExchanges.shift();
+}
+
+function formatRecent(): string {
+  if (recentExchanges.length === 0) return "";
+  return (
+    "Earlier in this conversation (not yet in long-term memory):\n" +
+    recentExchanges.map((e) => `Q: ${e.question}\nA: ${e.answer}`).join("\n\n")
+  );
+}
 
 const rendererDevUrl = process.env["ELECTRON_RENDERER_URL"];
 
@@ -167,22 +183,59 @@ async function analyzeScreenInBackground(): Promise<void> {
 
   if (!shot || !openrouterKey) {
     lastScreenContext = "";
+    visionPromise = null;
     sendVisionStatus(shot ? "failed" : "idle");
     return;
   }
 
   sendVisionStatus("analyzing");
+  visionPromise = analyzeScreen({
+    apiKey: openrouterKey,
+    screenshotDataUrl: shot,
+    model: openRouterVisionModel(),
+  })
+    .then((text) => {
+      lastScreenContext = text;
+      sendVisionStatus("ready");
+      return text;
+    })
+    .catch((err) => {
+      console.error("OpenRouter vision on summon failed", err);
+      lastScreenContext = "";
+      sendVisionStatus("failed");
+      return "";
+    });
+
+  await visionPromise;
+  visionPromise = null;
+}
+
+/** Wait for in-flight vision or return cached context (avoids answering with empty screen). */
+async function getScreenContext(
+  shot: string,
+  openrouterKey: string | undefined,
+): Promise<string> {
+  if (lastScreenContext) return lastScreenContext;
+
+  if (visionPromise) {
+    const timeout = new Promise<string>((resolve) => setTimeout(() => resolve(""), 3000));
+    const text = await Promise.race([visionPromise, timeout]);
+    if (text) return text;
+  }
+
+  if (!openrouterKey) return "";
+
   try {
-    lastScreenContext = await analyzeScreen({
+    const text = await analyzeScreen({
       apiKey: openrouterKey,
       screenshotDataUrl: shot,
       model: openRouterVisionModel(),
     });
-    sendVisionStatus("ready");
+    lastScreenContext = text;
+    return text;
   } catch (err) {
-    console.error("OpenRouter vision on summon failed", err);
-    lastScreenContext = "";
-    sendVisionStatus("failed");
+    console.error("OpenRouter vision failed", err);
+    return "";
   }
 }
 
@@ -343,20 +396,8 @@ function registerIpc(): void {
       };
     }
 
-    let screenContext = lastScreenContext;
-    const openrouterKey = process.env.OPENROUTER_API_KEY;
-    if (!screenContext && openrouterKey) {
-      try {
-        screenContext = await analyzeScreen({
-          apiKey: openrouterKey,
-          screenshotDataUrl: shot,
-          model: openRouterVisionModel(),
-        });
-        lastScreenContext = screenContext;
-      } catch (err) {
-        console.error("OpenRouter vision failed", err);
-      }
-    }
+    let screenContext = await getScreenContext(shot, process.env.OPENROUTER_API_KEY);
+    const openrouterKey = process.env.OPENROUTER_API_KEY ?? "";
 
     if (command?.kind === "remember") {
       const rememberContext =
@@ -382,6 +423,8 @@ function registerIpc(): void {
     }
 
     const recallQuery = cognee.buildRecallQuery(payload.question, screenContext);
+    const recentBlock = formatRecent();
+    const fullQuery = recentBlock ? `${recentBlock}\n\n${recallQuery}` : recallQuery;
     const cogneeUp = await cognee.health();
 
     let answer = "";
@@ -389,11 +432,12 @@ function registerIpc(): void {
 
     if (cogneeUp) {
       try {
-        const recalled = await cognee.recall(recallQuery, {
+        const recalled = await cognee.recall(fullQuery, {
           dataset,
           sessionId: SESSION_ID,
           scope: "auto",
           searchType: "GRAPH_COMPLETION",
+          topK: 15,
           systemPrompt: FELIX_RECALL_PROMPT,
         });
         answer = recalled.text.trim();
@@ -404,8 +448,15 @@ function registerIpc(): void {
     }
 
     if (!answer) {
-      answer = cognee.buildFallbackAnswer(screenContext, cogneeUp);
+      answer = await cognee.buildFallbackAnswer(
+        screenContext,
+        payload.question,
+        cogneeUp,
+        openrouterKey,
+      );
     }
+
+    pushRecent(payload.question, answer);
 
     const rememberContext =
       screenContext.slice(0, 2000) || "Screen Q&A via FelixAI";
@@ -416,6 +467,7 @@ function registerIpc(): void {
           question: payload.question,
           answer,
           context: rememberContext,
+          usedMemory,
         },
         { dataset, sessionId: SESSION_ID },
       )

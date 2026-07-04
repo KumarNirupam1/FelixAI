@@ -45,6 +45,10 @@ export async function health(): Promise<boolean> {
 }
 
 /** F5 — write a Q&A exchange to permanent memory (fire-and-forget; slow: 30–120s). */
+function extractTopic(question: string): string {
+  return question.trim().split(/\s+/).slice(0, 6).join(" ");
+}
+
 export async function rememberQA(
   qa: QAInput,
   o: RememberOptions,
@@ -55,6 +59,8 @@ export async function rememberQA(
       question: qa.question,
       answer: qa.answer,
       context: qa.context ?? "",
+      topic: extractTopic(qa.question),
+      built_on_memory: qa.usedMemory ?? false,
     },
     dataset_name: o.dataset,
     session_id: o.sessionId,
@@ -89,7 +95,9 @@ export async function recall(
   if (!res.ok) {
     throw new Error(`recall failed: ${res.status} ${await safeText(res)}`);
   }
-  return parseRecallAnswer(await res.json());
+  const data = await res.json();
+  console.log("RAW RECALL RESPONSE:", JSON.stringify(data, null, 2));
+  return parseRecallAnswer(data);
 }
 
 /** F8 — feedback-driven graph enrichment. */
