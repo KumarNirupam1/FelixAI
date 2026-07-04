@@ -89,7 +89,7 @@ export function FAQSection() {
   }
 
   return (
-    <section className="relative mx-auto w-full max-w-xl px-5 pb-20 pt-8">
+    <section className="relative mx-auto w-full max-w-xl px-5 pb-16 pt-4 md:pb-20">
       <div className="mb-10 text-center">
         <h2 className="text-2xl font-semibold text-foreground md:text-3xl">FAQ</h2>
         <p className="mt-2 text-sm text-muted-foreground">FelixAI & Cognee</p>

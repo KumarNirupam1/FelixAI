@@ -7,7 +7,7 @@ const LINKS = [
 
 export function FooterSection() {
   return (
-    <footer className="mx-auto w-full max-w-6xl border-t border-white/[0.06] px-6 py-14 md:px-8">
+    <footer className="mx-auto w-full max-w-6xl border-t border-white/[0.06] px-5 py-12 md:py-14">
       <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="text-3xl font-medium tracking-tight text-white/45 md:text-4xl">

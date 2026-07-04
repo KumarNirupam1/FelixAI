@@ -1,12 +1,46 @@
+# Dependencies
 node_modules/
-dist/
-out/
-release/
-.next/
-.turbo/
-*.log
+
+# Environment
 .env
 .env.*
 !.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
 .DS_Store
-apps/desktop/build/icon.png
+Thumbs.db
+
+# Turbo
+.turbo/
+**/.turbo/
+
+# Next.js
+.next/
+**/.next/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Vite / Electron / generic build outputs
+dist/
+**/dist/
+out/
+**/out/
+release/
+**/release/
+build/
+!apps/desktop/build/icon.png
+
+# Electron-builder artifacts
+*.exe
+*.dmg
+*.AppImage
+*.blockmap
+*.yml
+!pnpm-lock.yaml
+!**/.github/**/*.yml

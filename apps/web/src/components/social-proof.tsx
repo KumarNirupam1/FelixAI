@@ -2,7 +2,7 @@ const TECH = ["Cognee", "Electron", "OpenRouter", "Deepgram", "Docker", "TypeScr
 
 export function SocialProof() {
   return (
-    <section className="flex flex-col items-center justify-center gap-6 overflow-hidden py-16">
+    <section className="mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-5 px-5 py-12 md:gap-6 md:py-16">
       <p className="text-center text-3xl font-medium leading-tight text-gray-300">
         Built with
       </p>

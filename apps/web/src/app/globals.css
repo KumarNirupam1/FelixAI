@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 220 40% 4%;
+    --background: 240 96% 10%;
     --foreground: 210 25% 96%;
 
     --muted: 215 35% 12%;
@@ -39,11 +39,15 @@
 }
 
 @layer base {
+  html {
+    overflow-x: clip;
+    width: 100%;
+  }
   * {
     @apply border-border;
   }
   body {
-    @apply bg-black text-foreground antialiased;
+    @apply w-full overflow-x-clip bg-black text-foreground antialiased;
   }
 }
 

@@ -21,8 +21,8 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="w-full px-6 py-4">
-      <div className="mx-auto flex w-full max-w-[1600px] items-center justify-between">
+    <header className="w-full px-5 py-4">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between">
         <div className="flex items-center gap-6">
           <span className="text-xl font-semibold text-foreground">FelixAI</span>
           <nav className="hidden items-center gap-2 md:flex">
@@ -58,7 +58,7 @@ export function Header() {
       </div>
 
       {open && (
-        <nav className="mx-auto mt-4 flex w-full max-w-[1600px] flex-col gap-2 border-t border-white/10 pt-4 md:hidden">
+        <nav className="mx-auto mt-4 flex w-full max-w-6xl flex-col gap-2 border-t border-white/10 pt-4 md:hidden">
           {NAV.map((item) => (
             <Link
               key={item.name}

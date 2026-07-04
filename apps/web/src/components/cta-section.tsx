@@ -1,50 +1,126 @@
 "use client";
 
 import Link from "next/link";
-import { Github } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function CTASection() {
   return (
     <section
       id="get-started"
-      className="relative flex w-full flex-col items-center px-5 pb-20 pt-16 md:pb-28 md:pt-24"
+      className="relative mx-auto flex w-full max-w-6xl flex-col items-center justify-center overflow-hidden px-5 pb-16 pt-16 md:pb-20 md:pt-24"
     >
-      <div className="glass-panel-strong relative max-w-2xl rounded-3xl px-8 py-12 text-center md:px-14 md:py-16">
-        <div className="pointer-events-none absolute -inset-px rounded-3xl bg-gradient-to-b from-white/[0.06] via-transparent to-transparent" />
-
-        <div className="relative z-10 flex flex-col items-center gap-6">
-          <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            Run FelixAI locally
-          </h2>
-          <p className="max-w-md text-sm leading-relaxed text-muted-foreground md:text-base">
-            Clone the repo, start Cognee in Docker, add your keys — your
-            screen-aware assistant with persistent memory is ready in minutes.
-          </p>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center rounded-full border border-white/12 bg-white/[0.1] px-8 py-3 text-base font-medium text-foreground transition hover:bg-white/[0.14]"
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <svg
+          className="h-full w-full"
+          viewBox="0 0 1388 825"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="xMidYMid slice"
+          aria-hidden
+        >
+          <mask
+            id="felix-cta-mask"
+            style={{ maskType: "alpha" }}
+            maskUnits="userSpaceOnUse"
+            x="269"
+            y="27"
+            width="850"
+            height="493"
+          >
+            <rect x="269.215" y="27.4062" width="849.57" height="492.311" fill="url(#felix-cta-fade)" />
+          </mask>
+          <g mask="url(#felix-cta-mask)">
+            <g filter="url(#felix-cta-blur)">
+              <ellipse
+                cx="694"
+                cy="-93.0414"
+                rx="670.109"
+                ry="354.908"
+                fill="url(#felix-cta-radial)"
+                fillOpacity="0.8"
+              />
+            </g>
+            <ellipse cx="694" cy="-91.5385" rx="670.109" ry="354.908" fill="url(#felix-cta-white)" />
+            <ellipse cx="694" cy="-93.0414" rx="670.109" ry="354.908" fill="url(#felix-cta-bg)" />
+          </g>
+          <defs>
+            <filter
+              id="felix-cta-blur"
+              x="-234.109"
+              y="-705.949"
+              width="1856.22"
+              height="1225.82"
+              filterUnits="userSpaceOnUse"
+              colorInterpolationFilters="sRGB"
             >
-              <Github className="mr-2 h-4 w-4" />
+              <feFlood floodOpacity="0" result="BackgroundImageFix" />
+              <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape" />
+              <feGaussianBlur stdDeviation="129" result="effect1_foregroundBlur" />
+            </filter>
+            <linearGradient id="felix-cta-fade" x1="1118.79" y1="273.562" x2="269.215" y2="273.562" gradientUnits="userSpaceOnUse">
+              <stop stopColor="hsl(var(--background))" stopOpacity="0" />
+              <stop offset="0.2" stopColor="hsl(var(--background))" stopOpacity="0.8" />
+              <stop offset="0.8" stopColor="hsl(var(--background))" stopOpacity="0.8" />
+              <stop offset="1" stopColor="hsl(var(--background))" stopOpacity="0" />
+            </linearGradient>
+            <radialGradient
+              id="felix-cta-radial"
+              cx="0"
+              cy="0"
+              r="1"
+              gradientUnits="userSpaceOnUse"
+              gradientTransform="translate(683.482 245.884) rotate(-3.78676) scale(469.009 248.4)"
+            >
+              <stop offset="0.1294" stopColor="hsl(var(--primary-dark))" />
+              <stop offset="0.2347" stopColor="hsl(var(--primary))" />
+              <stop offset="0.3" stopColor="hsl(var(--primary))" stopOpacity="0" />
+            </radialGradient>
+            <linearGradient id="felix-cta-white" x1="694" y1="-446.446" x2="694" y2="263.369" gradientUnits="userSpaceOnUse">
+              <stop stopColor="white" stopOpacity="0" />
+              <stop offset="1" stopColor="white" stopOpacity="0.1" />
+            </linearGradient>
+            <linearGradient id="felix-cta-bg" x1="694" y1="-447.949" x2="694" y2="261.866" gradientUnits="userSpaceOnUse">
+              <stop stopColor="hsl(var(--background))" />
+              <stop offset="1" stopColor="hsl(var(--background))" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      <div className="relative z-10 flex w-full flex-col items-center justify-start gap-8">
+        <div className="flex max-w-2xl flex-col items-center gap-4 text-center">
+          <h2 className="max-w-[435px] break-words text-4xl font-semibold leading-tight text-foreground md:text-5xl lg:text-[68px] lg:leading-[76px]">
+            Get FelixAI!
+          </h2>
+          <p className="max-w-2xl break-words text-sm font-medium leading-[18.2px] text-muted-foreground md:text-base md:leading-relaxed">
+            Experience a screen-aware assistant that remembers. Self-hosted Cognee
+            memory, one hotkey, and answers grounded in what you&apos;ve already seen.
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
+          <Link href="https://github.com" target="_blank" rel="noopener noreferrer">
+            <Button
+              className="rounded-[99px] bg-secondary px-[30px] py-2 text-base font-medium leading-6 text-secondary-foreground shadow-[0px_0px_0px_4px_rgba(255,255,255,0.13)] transition-all duration-200 hover:bg-secondary/90"
+              size="lg"
+            >
               View on GitHub
-            </Link>
-            <button
-              type="button"
-              onClick={() =>
-                document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-8 py-3 text-base font-medium text-foreground transition hover:bg-white/[0.08]"
+            </Button>
+          </Link>
+          <Link
+            href="#faq-section"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            <Button
+              className="rounded-[99px] bg-primary px-[30px] py-2 text-base font-medium leading-6 text-primary-foreground shadow-[0px_0px_0px_4px_rgba(255,255,255,0.13)] transition-all duration-200 hover:bg-primary/90"
+              size="lg"
             >
               Setup guide
-            </button>
-          </div>
-
-          <pre className="mt-2 w-full overflow-x-auto rounded-xl border border-white/[0.06] bg-black/40 p-4 text-left font-mono text-[11px] leading-relaxed text-muted-foreground">
-            {`docker compose up -d    # Cognee\npnpm install && pnpm dev\nCtrl+Shift+Space      # summon`}
-          </pre>
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
