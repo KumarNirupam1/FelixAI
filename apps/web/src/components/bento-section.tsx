@@ -1,46 +1,26 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  Bug,
-  Brain,
-  Eye,
-  GitGraph,
-  Lock,
-  Mail,
-  Mic,
-  NotebookPen,
-  Sparkles,
-  Type,
-  Wand2,
-} from "lucide-react";
-
-function BentoVisual({ Icon }: { Icon: LucideIcon }) {
-  return (
-    <div className="flex h-full items-center justify-center p-8">
-      <div className="relative">
-        <div className="absolute inset-0 scale-150 rounded-full bg-primary/15 blur-2xl" />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10">
-          <Icon className="h-10 w-10 text-primary" strokeWidth={1.5} />
-        </div>
-      </div>
-    </div>
-  );
-}
+import type { ComponentType } from "react";
+import ScreenContextIllustration from "./bento/screen-context";
+import MemoryGraphIllustration from "./bento/memory-graph";
+import CrossSessionIllustration from "./bento/cross-session";
+import VoiceModeIllustration from "./bento/voice-mode";
+import PrivateVaultIllustration from "./bento/private-vault";
+import SelfHostedIllustration from "./bento/self-hosted";
 
 function BentoCard({
   title,
   description,
-  Icon,
+  Component,
 }: {
   title: string;
   description: string;
-  Icon: LucideIcon;
+  Component: ComponentType;
 }) {
   return (
-    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-primary/15">
+    <div className="relative flex flex-col overflow-hidden rounded-2xl border border-white/20">
       <div
         className="absolute inset-0 rounded-2xl"
         style={{
-          background: "hsl(var(--primary) / 0.04)",
+          background: "hsl(var(--primary) / 0.06)",
           backdropFilter: "blur(4px)",
         }}
       />
@@ -52,8 +32,8 @@ function BentoCard({
           <span className="text-muted-foreground">{description}</span>
         </p>
       </div>
-      <div className="relative z-10 h-48">
-        <BentoVisual Icon={Icon} />
+      <div className="relative z-10 h-72">
+        <Component />
       </div>
     </div>
   );
@@ -61,79 +41,60 @@ function BentoCard({
 
 const CARDS = [
   {
-    title: "Understand your work",
-    description: "Sees what you're working on and provides relevant help instantly.",
-    Icon: Eye,
+    title: "Screen-aware help",
+    description:
+      "OpenRouter vision describes what's on screen before Cognee answers.",
+    Component: ScreenContextIllustration,
   },
   {
-    title: "Find bugs instantly",
-    description: "Get solutions for code errors without leaving your IDE.",
-    Icon: Bug,
+    title: "Cognee memory graph",
+    description:
+      "Every Q&A is stored and connected — recall uses GRAPH_COMPLETION.",
+    Component: MemoryGraphIllustration,
   },
   {
-    title: "Write better emails",
-    description: "Draft perfect responses with context-aware suggestions.",
-    Icon: Mail,
+    title: "Cross-session recall",
+    description:
+      "Ask about last week. FelixAI pulls context from your local graph.",
+    Component: CrossSessionIllustration,
   },
   {
-    title: "Catch every typo",
-    description: "Fix grammar and spelling mistakes across any app.",
-    Icon: Type,
+    title: "Voice input",
+    description: "Speak your question — Deepgram nova-2 built into the popup.",
+    Component: VoiceModeIllustration,
   },
   {
-    title: "Explain complex text",
-    description: "Highlight any text to get a simple, clear explanation.",
-    Icon: Wand2,
+    title: "Private dataset",
+    description:
+      "Sensitive chats stay separate. Forget private with one command.",
+    Component: PrivateVaultIllustration,
   },
   {
-    title: "Automated notes",
-    description: "Get summaries and action items from your meetings.",
-    Icon: NotebookPen,
-  },
-  {
-    title: "Persistent memory",
-    description: "Every Q&A stored in Cognee — recall context from weeks ago.",
-    Icon: Brain,
-  },
-  {
-    title: "Voice mode",
-    description: "Speak instead of type. Deepgram nova-2 transcription built in.",
-    Icon: Mic,
-  },
-  {
-    title: "Memory graph",
-    description: "Browse datasets and open Cognee's interactive graph in your browser.",
-    Icon: GitGraph,
-  },
-  {
-    title: "Private mode",
-    description: "Separate dataset for sensitive chats. Forget private in one command.",
-    Icon: Lock,
-  },
-  {
-    title: "Smart onboarding",
-    description: "First summon seeds your graph with who you are and how you work.",
-    Icon: Sparkles,
+    title: "Fully self-hosted",
+    description:
+      "Cognee runs in Docker on your machine. No cloud memory lock-in.",
+    Component: SelfHostedIllustration,
   },
 ];
 
 export function BentoSection() {
   return (
-    <section className="relative flex w-full flex-col items-center overflow-visible px-5">
-      <div className="relative flex w-full max-w-6xl flex-col gap-6 py-8 md:py-16">
-        <div className="pointer-events-none absolute left-20 top-[400px] h-[500px] w-[400px] rotate-[-33deg] rounded-full bg-primary/10 blur-[130px]" />
-
-        <div className="relative z-10 flex flex-col items-center gap-4 py-8 md:py-14">
-          <h2 className="max-w-[655px] text-center text-4xl font-semibold leading-tight text-foreground md:text-5xl lg:text-6xl">
-            Everything FlickAI does — plus memory
+    <section className="flex w-full flex-col items-center justify-center overflow-visible bg-transparent px-5">
+      <div className="relative flex w-full max-w-6xl flex-col justify-start gap-6 py-8 md:py-16">
+        <div className="pointer-events-none absolute left-20 top-[500px] h-[500px] w-[400px] rotate-[-33deg] rounded-full bg-primary/10 blur-[130px]" />
+        <div className="relative z-10 flex flex-col items-center justify-center gap-4 py-8 md:py-14">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
+            Features
+          </p>
+          <h2 className="max-w-[655px] text-center text-4xl font-semibold leading-tight text-foreground md:text-6xl md:leading-[66px]">
+            Your screen. Cognee&apos;s brain.
           </h2>
-          <p className="max-w-[620px] text-center text-lg font-medium leading-relaxed text-muted-foreground md:text-xl">
-            Screen-aware help, voice input, and smart actions — with a
-            self-hosted knowledge graph that grows every session.
+          <p className="max-w-[600px] text-center text-lg font-medium leading-relaxed text-muted-foreground md:text-xl">
+            FelixAI combines live screen context with a persistent knowledge
+            graph — open source, local, and built for the Cognee hackathon.
           </p>
         </div>
-
-        <div className="relative z-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="relative z-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {CARDS.map((card) => (
             <BentoCard key={card.title} {...card} />
           ))}

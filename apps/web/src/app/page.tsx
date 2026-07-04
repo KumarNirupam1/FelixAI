@@ -2,6 +2,7 @@ import { HeroSection } from "@/components/hero-section";
 import { DashboardPreview } from "@/components/dashboard-preview";
 import { SocialProof } from "@/components/social-proof";
 import { BentoSection } from "@/components/bento-section";
+import { ArchitectureFlowSection } from "@/components/architecture-flow-section";
 import { LargeTestimonial } from "@/components/large-testimonial";
 import { HowItWorksSection } from "@/components/how-it-works-section";
 import { FAQSection } from "@/components/faq-section";
@@ -15,7 +16,7 @@ export default function LandingPage() {
       <div className="relative z-10">
         <main className="relative w-full">
           <HeroSection />
-          <div className="absolute bottom-[-60px] left-1/2 z-30 -translate-x-1/2 transform md:bottom-[-180px]">
+          <div className="absolute bottom-[-70px] left-1/2 z-30 -translate-x-1/2 transform md:bottom-[-230px]">
             <AnimatedSection>
               <DashboardPreview />
             </AnimatedSection>
@@ -23,7 +24,7 @@ export default function LandingPage() {
         </main>
 
         <AnimatedSection
-          className="relative z-10 mx-auto mt-[380px] w-full px-6 md:mt-[360px]"
+          className="relative z-10 mx-auto mt-[411px] w-full px-6 md:mt-[400px]"
           delay={0.1}
         >
           <SocialProof />
@@ -35,6 +36,10 @@ export default function LandingPage() {
           delay={0.2}
         >
           <BentoSection />
+        </AnimatedSection>
+
+        <AnimatedSection className="relative z-10 mx-auto mt-8 w-full md:mt-16" delay={0.2}>
+          <ArchitectureFlowSection />
         </AnimatedSection>
 
         <AnimatedSection className="relative z-10 mx-auto mt-8 w-full md:mt-16" delay={0.2}>

@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    /* Warm dark base — distinct from FlickAI's teal */
     --background: 35 14% 5%;
     --foreground: 45 18% 93%;
 
@@ -19,7 +18,7 @@
     --popover: 35 14% 5%;
     --popover-foreground: 45 18% 93%;
 
-    /* Primary — #DDB631 gold */
+    /* FelixAI gold */
     --primary: 46 72% 53%;
     --primary-foreground: 35 20% 8%;
     --primary-dark: 46 85% 38%;
@@ -32,9 +31,10 @@
     --accent-foreground: 45 18% 96%;
 
     --border: 46 40% 50% / 0.12;
+    --border-light: 46 30% 50% / 0.08;
     --ring: 46 72% 53%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
   }
 }
 
@@ -43,6 +43,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
 }
