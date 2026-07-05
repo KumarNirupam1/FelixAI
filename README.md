@@ -2,16 +2,11 @@
 
 <div align="center">
   <a href="LINK_TO_YOUR_YOUTUBE_VIDEO_OR_LOOM">
-    <img
-      src="https://github.com/user-attachments/assets/83e8c03a-538e-4a51-b317-d3446880d975"
-      alt="FelixAI demo"
-      width="1393"
-      height="842"
-    />
+    <img src="https://github.com/KumarNirupam1/FelixAI/blob/main/apps/web/src/app/app.png" alt="Watch FelixAI Demo" />
   </a>
   <h1>An AI Companion That Doesn't Forget</h1>
   <p>
-    <b>Powered by <a href="https://github.com/topoteretes/cognee">Cognee</a></b>
+    <b>Powered by <b>Cognee</b> · Self-hosted graph memory</b>
   </p>
   <p>
     <a href="https://github.com/KumarNirupam1/FelixAI/issues">Report Bug</a> ·
