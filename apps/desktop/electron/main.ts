@@ -560,22 +560,18 @@ function registerIpc(): void {
   });
 
   ipcMain.handle("recaptureScreen", async () => {
-    const win = popup && !popup.isDestroyed() ? popup : null;
-    const wasVisible = win?.isVisible() ?? false;
-    try {
-      // Keep the popup shown — hiding/showing caused a visible flicker mid-conversation.
-      // Fade out briefly so FelixAI doesn't capture itself in the screenshot.
-      if (win && wasVisible) win.setOpacity(0);
-      await new Promise((r) => setTimeout(r, 50));
-      lastScreenshot = await captureScreenshot();
-      lastScreenContext = "";
-      await analyzeScreenInBackground();
-    } finally {
-      if (win && !win.isDestroyed() && wasVisible) {
-        win.setOpacity(1);
-        win.focus();
-      }
+    if (popup && !popup.isDestroyed() && popup.isVisible()) {
+      popup.hide();
+      await new Promise((r) => setTimeout(r, 350));
     }
+    lastScreenshot = await captureScreenshot();
+    lastScreenContext = "";
+    if (popup && !popup.isDestroyed()) {
+      popup.show();
+      popup.focus();
+      isPopupVisible = true;
+    }
+    await analyzeScreenInBackground();
   });
 }
 
