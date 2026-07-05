@@ -74,18 +74,16 @@ Vision (OpenRouter) describes the screen. Cognee decides what you already know.
 
 Cross-session recall. Quit the app, come back days later, ask about something you already solved — Cognee pulls it straight from the graph. That's the gap browser ChatGPT can't fill, and it's the whole reason this exists.
 
-### Why NVIDIA Nemotron for vision
+### Choosing a vision model
 
-Default model: `nvidia/nemotron-nano-12b-v2-vl:free` on OpenRouter.
+FelixAI is mostly screens with text — code, errors, dashboards, UI. Pick a vision model on OpenRouter that handles that well, then set `OPENROUTER_VISION_MODEL` in `apps/desktop/.env` (or change the default in `packages/api-client/src/openrouter.ts`).
 
-FelixAI is mostly screens with text — code, errors, dashboards, UI. Nemotron is strong on exactly that, and the free tier keeps the demo cheap. Gemma and similar models are fine for general photos; Nemotron is the one that's actually good at "read my screen."
+**Example:** `meta-llama/llama-3.2-11b-vision-instruct` — a capable paid Meta Llama vision model, good for reading screens, UI, and dense text.
 
-The vision model is swappable, not hardcoded to this choice. Two directions worth knowing about:
+Two directions worth knowing about:
 
 - **More privacy/security** — swap in a self-hosted vision-capable model (anything you can run locally that handles vision reasonably well) instead of routing screenshots through OpenRouter at all. This keeps the whole pipeline — screen capture, description, and memory — entirely on your own machine, not just the memory layer.
-- **Better OCR/accuracy** — swap the OpenRouter model for a more advanced (paid) vision model if you're hitting the limits of the free tier on dense text, small fonts, or complex layouts. The free Nemotron tier is genuinely solid for most screens, but a stronger model closes the gap on trickier ones.
-
-Either way it's a one-line change in `packages/api-client/src/openrouter.ts` — the rest of the pipeline doesn't care which model is behind the API call.
+- **Better OCR/accuracy** — use a stronger paid vision model if you need sharper reads on small fonts or busy layouts. The pipeline does not care which model sits behind the API call.
 
 ### Why it feels fast, not sequential
 
@@ -129,7 +127,7 @@ Monorepo, managed with **pnpm** + **Turborepo**.
 - **Framework**: [Electron](https://www.electronjs.org/) + [Vite](https://vitejs.dev/)
 - **Frontend**: [React](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
 - **Styling**: [TailwindCSS](https://tailwindcss.com/)
-- **Vision**: [OpenRouter](https://openrouter.ai/) — Nemotron (free tier)
+- **Vision**: [OpenRouter](https://openrouter.ai/) — configurable (e.g. Llama 3.2 11B Vision)
 - **Text fallback**: OpenRouter — Gemma (free tier), used when recall comes back empty
 - **Voice**: [Deepgram](https://deepgram.com/) nova-2
 
@@ -159,6 +157,8 @@ docker compose up -d
 curl http://localhost:8000/health   # expect healthy
 ```
 
+> **Tip:** Docker Desktop must be running. If FelixAI still shows **memory offline** in the header, open a terminal in your Cognee repo, run `docker compose up -d` once, then launch the desktop app again — it should flip to **memory online**.
+
 ### 2. Clone and install FelixAI
 
 ```bash
@@ -182,6 +182,7 @@ cp apps/desktop/.env.example apps/desktop/.env
 ### Running it
 
 ```bash
+pnpm install    # once at repo root
 pnpm dev       # desktop app
 pnpm dev:web   # landing page
 ```
@@ -230,7 +231,7 @@ Screenshots happen only on hotkey — never continuously. FelixAI does not store
 
 | Data | Service | When |
 |------|---------|------|
-| Screenshot (as part of the API request) | OpenRouter vision (Nemotron) | Each hotkey summon, to produce a text description |
+| Screenshot (as part of the API request) | OpenRouter vision | Each hotkey summon, to produce a text description |
 | Question + screen text | OpenRouter text fallback (Gemma) | Only when Cognee recall returns empty |
 | Voice audio | Deepgram | When you use the mic |
 

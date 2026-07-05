@@ -9,8 +9,7 @@
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "icon": "node scripts/make-icon.mjs",
-    "package:win": "pnpm icon && turbo run build --filter=@felixai/cognee-client --filter=@felixai/api-client && pnpm --filter @felixai/desktop package:win",
-    "postinstall": "node scripts/postinstall-electron.cjs"
+    "package:win": "pnpm icon && turbo run build --filter=@felixai/cognee-client --filter=@felixai/api-client && pnpm --filter @felixai/desktop package:win"
   },
   "devDependencies": {
     "turbo": "^2.5.0",
