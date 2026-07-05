@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+const GITHUB_REPO = "https://github.com/KumarNirupam1/FelixAI";
+const SETUP_GUIDE = "https://github.com/KumarNirupam1/FelixAI#getting-started";
+
 export function CTASection() {
   return (
     <section
@@ -99,7 +102,7 @@ export function CTASection() {
         </div>
 
         <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
-          <Link href="https://github.com" target="_blank" rel="noopener noreferrer">
+          <Link href={GITHUB_REPO} target="_blank" rel="noopener noreferrer">
             <Button
               className="rounded-[99px] bg-secondary px-[30px] py-2 text-base font-medium leading-6 text-secondary-foreground shadow-[0px_0px_0px_4px_rgba(255,255,255,0.13)] transition-all duration-200 hover:bg-secondary/90"
               size="lg"
@@ -107,13 +110,7 @@ export function CTASection() {
               View on GitHub
             </Button>
           </Link>
-          <Link
-            href="#faq-section"
-            onClick={(e) => {
-              e.preventDefault();
-              document.getElementById("faq-section")?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
+          <Link href={SETUP_GUIDE} target="_blank" rel="noopener noreferrer">
             <Button
               className="rounded-[99px] bg-primary px-[30px] py-2 text-base font-medium leading-6 text-primary-foreground shadow-[0px_0px_0px_4px_rgba(255,255,255,0.13)] transition-all duration-200 hover:bg-primary/90"
               size="lg"
