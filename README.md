@@ -96,6 +96,109 @@ The slow path is: screenshot → wait for vision → wait for recall → show an
 
 Vision and typing overlap. Memory writes never make you wait.
 
+## Architecture
+
+FelixAI is an Electron desktop app with three runtime layers: a **renderer** (React popup UI), a **main process** (orchestration, secrets, screen capture), and **external services** (Cognee locally, OpenRouter + Deepgram remotely).
+
+```mermaid
+flowchart TB
+  subgraph Desktop["Electron — apps/desktop"]
+    Hotkey["Global hotkey / tray"]
+    Main["Main process<br/>main.ts"]
+    Renderer["Renderer — React popup"]
+    Preload["Preload bridge — IPC only"]
+
+    Hotkey --> Main
+    Renderer <-->|IPC| Preload
+    Preload <-->|IPC| Main
+  end
+
+  subgraph Packages["packages/"]
+    CogneeClient["cognee-client<br/>remember · recall · improve · forget"]
+    ApiClient["api-client<br/>vision · text fallback"]
+  end
+
+  subgraph Local["Self-hosted"]
+    Cognee["Cognee Docker<br/>GRAPH_COMPLETION"]
+  end
+
+  subgraph Remote["External APIs"]
+    OpenRouter["OpenRouter<br/>Nemotron vision · Gemma fallback"]
+    Deepgram["Deepgram nova-2<br/>voice"]
+  end
+
+  Main --> CogneeClient
+  Main --> ApiClient
+  CogneeClient --> Cognee
+  ApiClient --> OpenRouter
+  Renderer --> Deepgram
+```
+
+### Summon path (non-blocking)
+
+1. **Hotkey** (`Ctrl+Shift+Space`) → main process opens the popup immediately.
+2. **Screenshot** captured in main — image never sent to the renderer (stays in memory only).
+3. **Vision** starts in the background via OpenRouter; UI shows analyzing / ready / failed.
+4. Renderer receives `popup:shown` → fresh chat session for this summon.
+
+Summon never waits on vision. Worst case: popup is instant, vision badge shows "failed", conversation still works.
+
+### Ask path (Cognee-first)
+
+1. User submits a question → renderer calls `ask` over IPC.
+2. **`getScreenContext`** returns cached vision text, waits up to **3 seconds** on an in-flight background job, or returns empty — it does **not** start a second vision call.
+3. **`buildRecallQuery`** merges screen description + question (or question alone if vision isn't ready).
+4. **`cognee.recall`** with `GRAPH_COMPLETION` generates the answer from the knowledge graph.
+5. If recall is empty → **OpenRouter text fallback** (Gemma) using whatever screen context exists.
+6. **`rememberQA`** + periodic **`improve`** run in the background after the answer is shown.
+
+```text
+Hotkey ──► popup + screenshot ──► vision (background, best-effort)
+                                        │
+User asks ──► getScreenContext (≤3s) ───┤
+                │                       │
+                ▼                       ▼
+         buildRecallQuery ──► Cognee recall ──► answer
+                                    │
+                              empty? ──► OpenRouter fallback
+                                    │
+                              fire-and-forget remember / improve
+```
+
+### Vision resilience (recent design)
+
+Vision is **optional enrichment**, not a gate on answering:
+
+| Layer | Behavior |
+|-------|----------|
+| **Background vision** (`analyzeScreenInBackground`) | One attempt per summon/recapture; 15s abort; no immediate retry on connect failure |
+| **`getScreenContext`** | Cache → 3s wait on in-flight job → empty string; never blocks `ask()` on a fresh vision call |
+| **Cognee recall** | Works on question-only queries when the graph has relevant memory |
+| **Text fallback** | Only when recall returns empty; needs screen text to be useful |
+
+**Why this is a good tradeoff:** OpenRouter outages or slow networks no longer stall `ask()` for 10–20+ seconds. Memory-backed answers (the core product) keep working. The cost: screen-specific questions with no memory match and no vision text may get weaker answers until the next successful summon.
+
+**Camera re-capture:** the camera button hides the popup briefly (~350ms) so FelixAI doesn't photograph its own UI, then re-runs background vision. Conversation history is preserved.
+
+### Security boundaries
+
+| What | Where it lives |
+|------|----------------|
+| API keys (`OPENROUTER`, `DEEPGRAM`) | Main process env only — never exposed to renderer |
+| Screenshots | Main process memory — not written to disk, not sent to UI |
+| Knowledge graph | Self-hosted Cognee Docker |
+| Voice audio | Renderer → Deepgram directly (key injected at build/dev time) |
+
+### Monorepo packages
+
+| Package | Role |
+|---------|------|
+| `apps/desktop` | Electron app — tray, hotkey, IPC, ask orchestration |
+| `apps/web` | Next.js landing page |
+| `packages/cognee-client` | Typed REST client for Cognee lifecycle |
+| `packages/api-client` | OpenRouter vision + text fallback |
+| `packages/ui` | Shared React components |
+
 ## Challenges Faced
 
 Real hurdles, not the polished version:
@@ -106,7 +209,7 @@ Real hurdles, not the polished version:
 
 **3. Even with a full graph, recall still comes back empty sometimes — and that's just normal.** This one's different from #1 — the graph can have plenty in it and *still* return nothing for a specific question, because `GRAPH_COMPLETION` genuinely couldn't find a relevant path for what you just asked. This isn't a one-time bug, it's an ongoing reality of graph search — some questions just won't have a match, forever, no matter how big the graph gets. Fix: an OpenRouter fallback answers directly from the screen context whenever recall's empty, so you always get something real instead of silence — and it still gets remembered for next time, in case it comes up again.
 
-**4. Vision latency — nobody wants to wait on summon.** If FelixAI waits for the vision model to finish describing your screen before it even shows the popup, the whole "instant assistant" feeling is gone. Fix: vision kicks off the second the popup opens, not when you hit Enter — by the time you've typed your question, it's usually already done. If it's not, `getScreenContext` races it with a short timeout instead of making you sit there.
+**4. Vision latency — nobody wants to wait on summon.** If FelixAI waits for the vision model to finish describing your screen before it even shows the popup, the whole "instant assistant" feeling is gone. Fix: vision kicks off the second the popup opens, not when you hit Enter — by the time you've typed your question, it's usually already done. If it's not, `getScreenContext` races the background job with a 3-second cap and proceeds without screen text rather than starting a second blocking vision call inside `ask()`.
 
 **5. Docker plus two separate API keys — real setup friction, no way around it.** Cognee needs its own `LLM_API_KEY` in its own `.env` for graph completion. FelixAI separately needs `OPENROUTER_API_KEY` for vision. Two different files, two different places to mess it up. Fix: spelled out clearly in setup below, plus a live health check in the header — "memory online" or "memory offline" — so you know immediately if Cognee's actually running instead of guessing.
 

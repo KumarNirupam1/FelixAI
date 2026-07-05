@@ -223,20 +223,8 @@ async function getScreenContext(
     if (text) return text;
   }
 
-  if (!openrouterKey) return "";
-
-  try {
-    const text = await analyzeScreen({
-      apiKey: openrouterKey,
-      screenshotDataUrl: shot,
-      model: openRouterVisionModel(),
-    });
-    lastScreenContext = text;
-    return text;
-  } catch (err) {
-    console.error("OpenRouter vision failed", err);
-    return "";
-  }
+  // No fresh synchronous vision attempt — proceed without screen context.
+  return "";
 }
 
 function notifyPopupShown(skipVision = false): void {
@@ -572,18 +560,22 @@ function registerIpc(): void {
   });
 
   ipcMain.handle("recaptureScreen", async () => {
-    if (popup && !popup.isDestroyed() && popup.isVisible()) {
-      popup.hide();
-      await new Promise((r) => setTimeout(r, 350));
+    const win = popup && !popup.isDestroyed() ? popup : null;
+    const wasVisible = win?.isVisible() ?? false;
+    try {
+      // Keep the popup shown — hiding/showing caused a visible flicker mid-conversation.
+      // Fade out briefly so FelixAI doesn't capture itself in the screenshot.
+      if (win && wasVisible) win.setOpacity(0);
+      await new Promise((r) => setTimeout(r, 50));
+      lastScreenshot = await captureScreenshot();
+      lastScreenContext = "";
+      await analyzeScreenInBackground();
+    } finally {
+      if (win && !win.isDestroyed() && wasVisible) {
+        win.setOpacity(1);
+        win.focus();
+      }
     }
-    lastScreenshot = await captureScreenshot();
-    lastScreenContext = "";
-    if (popup && !popup.isDestroyed()) {
-      popup.show();
-      popup.focus();
-      isPopupVisible = true;
-    }
-    await analyzeScreenInBackground();
   });
 }
 
