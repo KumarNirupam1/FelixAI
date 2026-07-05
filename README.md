@@ -114,7 +114,7 @@ Real hurdles, not the polished version:
 
 ## What It Does
 
-- **Instant wake** — `Ctrl+Shift+Space` summons the popup from anywhere
+- **Instant wake** — `⌘+Shift+Space` on Mac, `Ctrl+Shift+Space` on Windows/Linux — summons the popup from anywhere
 - **Real screen vision** — an actual screenshot the moment you hit the hotkey, not clipboard guesswork
 - **Persistent memory** — every exchange lives in a self-hosted Cognee knowledge graph
 - **Voice input** — Deepgram nova-2, speak instead of typing
@@ -186,7 +186,7 @@ pnpm dev       # desktop app
 pnpm dev:web   # landing page
 ```
 
-`Ctrl+Shift+Space` anywhere to summon FelixAI.
+Press **`⌘+Shift+Space`** on Mac or **`Ctrl+Shift+Space`** on Windows/Linux anywhere to summon FelixAI.
 
 ## Project Structure
 
