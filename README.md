@@ -292,6 +292,27 @@ pnpm dev:web   # landing page
 
 Press **`⌘+Shift+Space`** on Mac or **`Ctrl+Shift+Space`** on Windows/Linux anywhere to summon FelixAI.
 
+### First launch — onboarding
+
+The **first time** you hit the hotkey, FelixAI opens a short setup flow instead of taking a screenshot. After that, every summon works normally (screenshot + vision + chat).
+
+| Step | What you see |
+|------|----------------|
+| **Welcome** | Intro screen — click through to start |
+| **4 questions** | Name, what you work on, what you need help with, how you like answers |
+| **Done** | Chat unlocks — you're ready to ask about your screen |
+
+The four questions (defined in `apps/desktop/electron/services/onboarding.ts`):
+
+1. What should I call you?
+2. What are you usually working on?
+3. What kind of things do you want help with most?
+4. How do you like your answers — quick and to the point, or more detailed and thorough?
+
+Each answer is sent to Cognee via `remember/entry` in the **background** — the UI marks setup complete immediately so you're not waiting on slow graph writes. An `improve()` run follows to sync session data into the permanent graph.
+
+Completion is stored locally at `%APPDATA%/FelixAI/onboarding.json` (Windows). Until that file exists, `ask()` returns a prompt to finish setup first.
+
 ## Project Structure
 
 ```text
