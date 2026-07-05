@@ -2,15 +2,20 @@
 
 <div align="center">
   <a href="LINK_TO_YOUR_YOUTUBE_VIDEO_OR_LOOM">
-    <img src="<img width="1393" height="842" alt="Image" src="https://github.com/user-attachments/assets/83e8c03a-538e-4a51-b317-d3446880d975" />" alt="Watch FelixAI Demo" />
+    <img
+      src="https://github.com/user-attachments/assets/83e8c03a-538e-4a51-b317-d3446880d975"
+      alt="FelixAI demo"
+      width="1393"
+      height="842"
+    />
   </a>
   <h1>An AI Companion That Doesn't Forget</h1>
   <p>
-    <b>Powered by <a href="https://github.com/topoteretes/cognee">Cognee</a> </b>
+    <b>Powered by <a href="https://github.com/topoteretes/cognee">Cognee</a></b>
   </p>
   <p>
-    <a href="LINK_TO_YOUR_GITHUB_REPO/issues">Report Bug</a> ·
-    <a href="LINK_TO_YOUR_GITHUB_REPO/issues">Request Feature</a>
+    <a href="https://github.com/KumarNirupam1/FelixAI/issues">Report Bug</a> ·
+    <a href="https://github.com/KumarNirupam1/FelixAI/issues">Request Feature</a>
   </p>
 </div>
 
@@ -162,7 +167,7 @@ curl http://localhost:8000/health   # expect healthy
 ### 2. Clone and install FelixAI
 
 ```bash
-git clone LINK_TO_YOUR_GITHUB_REPO
+git clone https://github.com/KumarNirupam1/FelixAI
 cd FelixAI
 pnpm install
 ```
@@ -217,9 +222,24 @@ FelixAI/
 
 ## Privacy
 
-Screenshots happen only on hotkey — never continuously. They're sent to OpenRouter's vision model to generate a text description, then discarded — not stored on disk or long-term. What sticks around is a text record of the question and answer, in your own local, self-hosted Cognee graph, running in Docker on your machine.
+Screenshots happen only on hotkey — never continuously. FelixAI does not store screenshots on disk.
 
-One honest caveat: the free-tier OpenRouter vision model may log prompts/outputs for provider-side improvement, per their own free-tier terms. Fine for a hackathon demo — worth knowing if you're pointing this at anything actually sensitive.
+### What stays local
+
+| Data | Location |
+|------|----------|
+| Knowledge graph (Q&A, preferences) | Self-hosted Cognee in Docker on your machine |
+| Onboarding and app settings | `%APPDATA%/FelixAI/` (Windows) |
+
+### What leaves your machine
+
+| Data | Service | When |
+|------|---------|------|
+| Screenshot (as part of the API request) | OpenRouter vision (Nemotron) | Each hotkey summon, to produce a text description |
+| Question + screen text | OpenRouter text fallback (Gemma) | Only when Cognee recall returns empty |
+| Voice audio | Deepgram | When you use the mic |
+
+Memory is self-hosted. Vision and voice are not — the free OpenRouter tier may log prompts and outputs per their terms. Use private mode and `forget private` for sensitive exchanges, and avoid confidential screens on the free vision endpoint.
 
 ## Hackathon Context
 
