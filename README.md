@@ -253,12 +253,32 @@ Monorepo, managed with **pnpm** + **Turborepo**.
 
 ### 1. Start Cognee
 
-In your cloned `cognee` repo, with `LLM_API_KEY` set in its `.env`:
+In your cloned `cognee` repo:
+
+**Step A — set `LLM_API_KEY` in Cognee's `.env`.**
+
+**Step B — edit `docker-compose.yml` before building the image.**  
+Do this *first*; changing compose after the image is built may not apply auth settings correctly.
+
+> **Important — FelixAI expects auth disabled on local Cognee.**  
+> FelixAI is a single-user desktop companion and talks to Cognee over plain REST with no auth headers. Add these to the **`environment:`** block of the Cognee service in **`docker-compose.yml`** (not only in a mounted `.env` — that file alone is not always picked up at import time):
+
+```yaml
+environment:
+  # Single-user local companion: inject auth posture into process env
+  - ENABLE_BACKEND_ACCESS_CONTROL=false
+  - REQUIRE_AUTHENTICATION=false
+  - LLM_API_KEY=${LLM_API_KEY}   # your existing key — keep this too
+```
+
+**Step C — build and start** (only after Step B):
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 curl http://localhost:8000/health   # expect healthy
 ```
+
+Without those two flags, Cognee may reject FelixAI's `remember` / `recall` / `improve` calls even when the container is up and `LLM_API_KEY` is set. If you already built without them, edit `docker-compose.yml` and run `docker compose up -d --build` again.
 
 > **Tip:** Docker Desktop must be running. If FelixAI still shows **memory offline** in the header, open a terminal in your Cognee repo, run `docker compose up -d` once, then launch the desktop app again — it should flip to **memory online**.
 
